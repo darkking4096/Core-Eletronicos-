@@ -16,6 +16,17 @@ export function obterGarantia(marca, versao, condicao) {
         ]
       }
     }
+    if (!isSeminovo) {
+      return {
+        titulo: 'Garantia de iPhone Novos - 12 meses', dias: 365,
+        termos: [
+          'A LOJA garante entregar ao cliente o produto LACRADO na caixa com devido lacre original da APPLE.',
+          'A garantia do produto lacrado terá validade por 12 meses, a partir da data da ativação do produto. Garantia essa fornecida pelo próprio fabricante e que deverá ser acionada seguindo os procedimentos internos da Apple.',
+          'Na hipótese de o produto apresentar falha ou vício de fabricação dentro do prazo de garantia, o consumidor deverá procurar imediatamente a fabricante Apple, não sendo permitido que terceiros avaliem ou reparem o produto, sob pena do comprador ser responsável por tal ato, eximindo a Loja do dever de reparar, além da perda da garantia junto ao fabricante.',
+          'A Core Distribuidora Eletrônicos prestará total auxílio ao comprador, informando todo o procedimento necessário para exercer sua garantia junto ao fabricante.'
+        ]
+      }
+    }
     return {
       titulo: 'Garantia de iPhone Semi Novos - 3 meses', dias: 90,
       termos: [
