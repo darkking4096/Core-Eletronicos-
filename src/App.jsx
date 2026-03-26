@@ -70,6 +70,23 @@ function Modal({ open, onClose, title, children, wide }) {
   )
 }
 
+function ConfirmModal({ open, msg, onConfirm, onCancel }) {
+  if (!open) return null
+  return (
+    <div style={S.modal}>
+      <div style={{ ...S.modalBox, maxWidth: 380, textAlign: 'center' }}>
+        <div style={{ fontSize: 36, marginBottom: 12 }}>⚠️</div>
+        <div style={{ fontSize: 16, color: '#e2e8f0', fontWeight: 600, marginBottom: 8 }}>Confirmar exclusão</div>
+        <div style={{ fontSize: 14, color: '#94a3b8', marginBottom: 24 }}>{msg}</div>
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
+          <button style={S.btn('ghost')} onClick={onCancel}>Cancelar</button>
+          <button style={S.btn('danger')} onClick={onConfirm}>Excluir</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function DateFilter({ value, onChange }) {
   const [custom, setCustom] = useState(false)
   const [start, setStart] = useState(daysAgo(30))
@@ -308,6 +325,7 @@ function EstoqueAparelhos({ db, refresh }) {
   const [form, setForm] = useState({})
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState('')
+  const [confirmItem, setConfirmItem] = useState(null)
 
   function openModal(item = null) {
     setEditItem(item)
@@ -376,10 +394,12 @@ function EstoqueAparelhos({ db, refresh }) {
     setLoading(false)
   }
 
-  async function excluir(item) {
-    if (!confirm(`Excluir ${item.cod}?`)) return
+  function excluir(item) { setConfirmItem(item) }
+
+  async function doExcluir(item) {
     const tbl = tab === 'cadastro' ? 'cadastro_aparelhos' : 'estoque_aparelhos'
     await supabase.from(tbl).delete().eq('id', item.id)
+    setConfirmItem(null)
     refresh()
   }
 
@@ -498,6 +518,7 @@ function EstoqueAparelhos({ db, refresh }) {
           <button style={S.btn()} onClick={salvar} disabled={loading}>{loading ? 'Salvando...' : 'Salvar'}</button>
         </div>
       </Modal>
+      <ConfirmModal open={!!confirmItem} msg={`Excluir ${confirmItem?.cod}?`} onConfirm={() => doExcluir(confirmItem)} onCancel={() => setConfirmItem(null)} />
     </div>
   )
 }
@@ -512,6 +533,7 @@ function EstoqueAcessorios({ db, refresh }) {
   const [form, setForm] = useState({})
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState('')
+  const [confirmItem, setConfirmItem] = useState(null)
 
   function openModal(item = null) {
     setEditItem(item)
@@ -566,10 +588,12 @@ function EstoqueAcessorios({ db, refresh }) {
     setLoading(false)
   }
 
-  async function excluir(item) {
-    if (!confirm(`Excluir ${item.cod}?`)) return
+  function excluir(item) { setConfirmItem(item) }
+
+  async function doExcluir(item) {
     const tbl = tab === 'cadastro' ? 'cadastro_acessorios' : 'estoque_acessorios'
     await supabase.from(tbl).delete().eq('id', item.id)
+    setConfirmItem(null)
     refresh()
   }
 
@@ -667,6 +691,7 @@ function EstoqueAcessorios({ db, refresh }) {
           <button style={S.btn()} onClick={salvar} disabled={loading}>{loading ? 'Salvando...' : 'Salvar'}</button>
         </div>
       </Modal>
+      <ConfirmModal open={!!confirmItem} msg={`Excluir ${confirmItem?.cod}?`} onConfirm={() => doExcluir(confirmItem)} onCancel={() => setConfirmItem(null)} />
     </div>
   )
 }
@@ -678,6 +703,7 @@ function Custos({ db, refresh }) {
   const [filter, setFilter] = useState({ start: daysAgo(30), end: today(), label: '30 dias' })
   const [modalOpen, setModalOpen] = useState(false)
   const [form, setForm] = useState({ data: today(), tipo: '', categoria: '', valor: '', observacao: '' })
+  const [confirmItem, setConfirmItem] = useState(null)
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState('')
 
@@ -695,9 +721,11 @@ function Custos({ db, refresh }) {
     setLoading(false)
   }
 
-  async function excluir(item) {
-    if (!confirm('Excluir este custo?')) return
+  function excluir(item) { setConfirmItem(item) }
+
+  async function doExcluir(item) {
     await supabase.from('custos').delete().eq('id', item.id)
+    setConfirmItem(null)
     refresh()
   }
 
@@ -765,6 +793,7 @@ function Custos({ db, refresh }) {
           <button style={S.btn()} onClick={salvar} disabled={loading}>{loading ? 'Salvando...' : 'Registrar'}</button>
         </div>
       </Modal>
+      <ConfirmModal open={!!confirmItem} msg="Excluir este custo?" onConfirm={() => doExcluir(confirmItem)} onCancel={() => setConfirmItem(null)} />
     </div>
   )
 }
@@ -779,6 +808,7 @@ function Vendas({ db, refresh }) {
   const [viewItem, setViewItem] = useState(null)
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState('')
+  const [confirmItem, setConfirmItem] = useState(null)
 
   // Filtrar vendas por tipo e período
   const vendas = (db.vendas || []).filter(v => {
@@ -788,9 +818,11 @@ function Vendas({ db, refresh }) {
 
   function openModal() { setMsg(''); setModalOpen(true) }
 
-  async function excluir(item) {
-    if (!confirm('Excluir esta venda?')) return
+  function excluir(item) { setConfirmItem(item) }
+
+  async function doExcluir(item) {
     await supabase.from('vendas').delete().eq('id', item.id)
+    setConfirmItem(null)
     refresh()
   }
 
@@ -938,6 +970,7 @@ function Vendas({ db, refresh }) {
           </div>
         </Modal>
       )}
+      <ConfirmModal open={!!confirmItem} msg="Excluir esta venda?" onConfirm={() => doExcluir(confirmItem)} onCancel={() => setConfirmItem(null)} />
     </div>
   )
 }
