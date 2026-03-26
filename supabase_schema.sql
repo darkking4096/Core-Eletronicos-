@@ -42,11 +42,16 @@ CREATE TABLE IF NOT EXISTS estoque_acessorios (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   cod TEXT NOT NULL,
   tipo TEXT NOT NULL,
+  descricao TEXT NOT NULL DEFAULT '',
   quantidade INTEGER NOT NULL DEFAULT 0,
   custo_unitario NUMERIC(10,2) NOT NULL DEFAULT 0,
   data_aquisicao DATE NOT NULL,
   created_at TIMESTAMPTZ DEFAULT now()
 );
+
+-- Migração: adicionar coluna descricao se a tabela já existir
+-- Execute este comando separadamente se a tabela já foi criada:
+-- ALTER TABLE estoque_acessorios ADD COLUMN IF NOT EXISTS descricao TEXT NOT NULL DEFAULT '';
 
 -- Todas as vendas (física, recibo/online, orçamento)
 CREATE TABLE IF NOT EXISTS vendas (

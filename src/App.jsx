@@ -317,8 +317,13 @@ function EstoqueAparelhos({ db, refresh }) {
   }
 
   async function salvar() {
-    if (!form.cod || !form.marca || !form.modelo || !form.capacidade || !form.cor) {
+    // Para cadastro, código é obrigatório. Para estoque, é opcional (gerado automaticamente)
+    if (tab === 'cadastro' && (!form.cod || !form.marca || !form.modelo || !form.capacidade || !form.cor)) {
       setMsg('Preencha todos os campos obrigatórios')
+      return
+    }
+    if (tab === 'estoque' && (!form.marca || !form.modelo || !form.capacidade || !form.cor)) {
+      setMsg('Preencha marca, modelo, capacidade e cor')
       return
     }
     setLoading(true)
@@ -334,11 +339,31 @@ function EstoqueAparelhos({ db, refresh }) {
       } else {
         // Salvar em estoque_aparelhos + auto-cadastro
         if (!form.custo || !form.data_aquisicao) { setMsg('Informe custo e data'); setLoading(false); return }
-        const cadastroExiste = (db.cadastro_aparelhos || []).some(c => c.cod === form.cod.split('-')[0].toUpperCase())
-        if (!cadastroExiste) {
-          await supabase.from('cadastro_aparelhos').insert({ cod: form.cod.split('-')[0].toUpperCase(), marca: form.marca, modelo: form.modelo.toUpperCase(), capacidade: form.capacidade, cor: form.cor.toUpperCase() })
+
+        // Determinar código base (ex: AP001)
+        let baseCod = form.cod ? form.cod.split('-')[0].toUpperCase() : null
+        if (!baseCod) {
+          // Gerar novo código base automaticamente
+          const existingCods = (db.cadastro_aparelhos || []).map(c => c.cod).filter(c => /^AP\d+$/.test(c))
+          const maxNum = existingCods.length > 0 ? Math.max(...existingCods.map(c => parseInt(c.replace('AP', '')))) : 0
+          baseCod = 'AP' + String(maxNum + 1).padStart(3, '0')
         }
-        const data = { cod: form.cod.toUpperCase(), marca: form.marca, modelo: form.modelo.toUpperCase(), capacidade: form.capacidade, cor: form.cor.toUpperCase(), custo: Number(form.custo), data_aquisicao: form.data_aquisicao, status: 'disponivel' }
+
+        // Criar cadastro se não existir
+        const cadastroExiste = (db.cadastro_aparelhos || []).some(c => c.cod === baseCod)
+        if (!cadastroExiste) {
+          await supabase.from('cadastro_aparelhos').insert({ cod: baseCod, marca: form.marca, modelo: form.modelo.toUpperCase(), capacidade: form.capacidade, cor: form.cor.toUpperCase() })
+        }
+
+        // Determinar código de instância (ex: AP001-001)
+        let instanceCod = form.cod ? form.cod.toUpperCase() : null
+        if (!instanceCod || !instanceCod.includes('-')) {
+          const existingInstances = (db.estoque_aparelhos || []).map(e => e.cod).filter(c => c.startsWith(baseCod + '-'))
+          const maxInst = existingInstances.length > 0 ? Math.max(...existingInstances.map(c => parseInt(c.split('-')[1] || 0))) : 0
+          instanceCod = baseCod + '-' + String(maxInst + 1).padStart(3, '0')
+        }
+
+        const data = { cod: instanceCod, marca: form.marca, modelo: form.modelo.toUpperCase(), capacidade: form.capacidade, cor: form.cor.toUpperCase(), custo: Number(form.custo), data_aquisicao: form.data_aquisicao, status: 'disponivel' }
         if (editItem) {
           await supabase.from('estoque_aparelhos').update(data).eq('id', editItem.id)
         } else {
@@ -499,12 +524,39 @@ function EstoqueAcessorios({ db, refresh }) {
     setLoading(true)
     try {
       if (tab === 'cadastro') {
-        const data = { cod: form.cod.toUpperCase(), tipo: form.tipo, descricao: form.descricao.toUpperCase() }
+        // Gerar código automaticamente se não preenchido
+        let cod = form.cod ? form.cod.toUpperCase() : null
+        if (!cod) {
+          const existingCods = (db.cadastro_acessorios || []).map(c => c.cod).filter(c => /^AC\d+$/.test(c))
+          const maxNum = existingCods.length > 0 ? Math.max(...existingCods.map(c => parseInt(c.replace('AC', '')))) : 0
+          cod = 'AC' + String(maxNum + 1).padStart(3, '0')
+        }
+        const data = { cod, tipo: form.tipo, descricao: (form.descricao || '').toUpperCase() }
         if (editItem) await supabase.from('cadastro_acessorios').update(data).eq('id', editItem.id)
         else await supabase.from('cadastro_acessorios').insert(data)
       } else {
         if (!form.quantidade || !form.custo_unitario || !form.data_aquisicao) { setMsg('Preencha todos os campos'); setLoading(false); return }
-        const data = { cod: form.cod.toUpperCase(), tipo: form.tipo, quantidade: Number(form.quantidade), custo_unitario: Number(form.custo_unitario), data_aquisicao: form.data_aquisicao }
+
+        // Gerar código automaticamente se não preenchido
+        let cod = form.cod ? form.cod.toUpperCase() : null
+        let descricao = form.descricao || ''
+        let tipo = form.tipo || ''
+        if (!cod) {
+          const existingCods = (db.cadastro_acessorios || []).map(c => c.cod).filter(c => /^AC\d+$/.test(c))
+          const maxNum = existingCods.length > 0 ? Math.max(...existingCods.map(c => parseInt(c.replace('AC', '')))) : 0
+          cod = 'AC' + String(maxNum + 1).padStart(3, '0')
+          // Criar no cadastro também se não existir
+          const cadastroExiste = (db.cadastro_acessorios || []).some(c => c.cod === cod)
+          if (!cadastroExiste) {
+            await supabase.from('cadastro_acessorios').insert({ cod, tipo, descricao: descricao.toUpperCase() })
+          }
+        } else {
+          // Buscar descrição do cadastro se não preenchida
+          const cat = (db.cadastro_acessorios || []).find(c => c.cod === cod)
+          if (cat) { descricao = descricao || cat.descricao; tipo = tipo || cat.tipo }
+        }
+
+        const data = { cod, tipo, descricao: descricao.toUpperCase(), quantidade: Number(form.quantidade), custo_unitario: Number(form.custo_unitario), data_aquisicao: form.data_aquisicao }
         if (editItem) await supabase.from('estoque_acessorios').update(data).eq('id', editItem.id)
         else await supabase.from('estoque_acessorios').insert(data)
       }
@@ -536,6 +588,7 @@ function EstoqueAcessorios({ db, refresh }) {
   const colsEstoque = [
     { key: 'cod', label: 'Código' },
     { key: 'tipo', label: 'Tipo' },
+    { key: 'descricao', label: 'Descrição' },
     { key: 'quantidade', label: 'Qtd' },
     { key: 'custo_unitario', label: 'Custo Unit.', render: v => formatMoney(v) },
     { key: 'custo_total', label: 'Total', render: (_, r) => formatMoney(Number(r.quantidade) * Number(r.custo_unitario)) },
