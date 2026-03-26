@@ -87,6 +87,11 @@ export function gerarHTMLRecibo(pdf, isOrcamento = false) {
     .footer { margin-top: 20px; padding-top: 15px; border-top: 1px solid #ddd; text-align: center; font-size: 10px; color: #666; }
     .assinatura { display: flex; justify-content: space-between; margin-top: 30px; }
     .ass-line { flex: 1; text-align: center; padding-top: 10px; border-top: 1px solid #333; margin: 0 20px; font-size: 10px; }
+    @media print {
+      body { background: #fff !important; }
+      .page { padding: 10mm; }
+      @page { margin: 0; size: A4; }
+    }
   </style>
 </head>
 <body>
@@ -170,20 +175,24 @@ export function gerarHTMLRecibo(pdf, isOrcamento = false) {
 </html>`
 }
 
-export async function gerarPDF(htmlContent, nomeArquivo) {
-  const html2pdf = (await import('html2pdf.js')).default
-  const opt = {
-    margin: [10, 10, 10, 10],
-    filename: nomeArquivo || 'documento.pdf',
-    image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+export function gerarPDF(htmlContent, nomeArquivo) {
+  // Injeta script de impressão automática no HTML
+  const htmlWithPrint = htmlContent.replace(
+    '</body>',
+    `<script>
+      window.onload = function() {
+        setTimeout(function() {
+          document.title = '${(nomeArquivo || 'documento').replace(/'/g, "\\'")}';
+          window.print();
+        }, 400);
+      };
+    <\/script></body>`
+  )
+  const blob = new Blob([htmlWithPrint], { type: 'text/html;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const tab = window.open(url, '_blank')
+  if (!tab) {
+    alert('Permita popups neste site para gerar o PDF. Clique no ícone de bloqueio na barra de endereço e permita popups.')
   }
-  const element = document.createElement('div')
-  element.innerHTML = htmlContent
-  element.style.position = 'absolute'
-  element.style.left = '-9999px'
-  document.body.appendChild(element)
-  await html2pdf().set(opt).from(element).save()
-  document.body.removeChild(element)
+  setTimeout(() => URL.revokeObjectURL(url), 60000)
 }

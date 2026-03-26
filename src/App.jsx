@@ -794,10 +794,61 @@ function Vendas({ db, refresh }) {
     refresh()
   }
 
-  async function gerarPDFVenda(item) {
-    const dados = item.items_json || {}
+  function gerarPDFVenda(item) {
+    let dados = item.items_json
+
+    if (!dados) {
+      // Reconstruir dados do PDF a partir dos campos da venda (importadas sem items_json)
+      const cidadeParts = (item.cliente_cidade || '').split('/')
+      const cidadeNome = cidadeParts[0] || ''
+      const estadoNome = cidadeParts[1] || 'GO'
+
+      const aparelhosDescs = item.aparelhos_descricao ? item.aparelhos_descricao.split(' | ') : []
+      const aparelhosPDF = aparelhosDescs.map(d => ({
+        descricao: d,
+        qtd: 1,
+        valorUnitario: formatMoney(Number(item.preco_venda) / Math.max(aparelhosDescs.length, 1)),
+        desconto: '-',
+        valorTotal: formatMoney(Number(item.preco_venda) / Math.max(aparelhosDescs.length, 1))
+      }))
+
+      const acessoriosDescs = item.acessorios_descricao ? item.acessorios_descricao.split(' | ') : []
+      const acessoriosPDF = acessoriosDescs.map(d => ({
+        descricao: d, qtd: 1, valorUnitario: formatMoney(0), desconto: '-', valorTotal: formatMoney(0)
+      }))
+
+      const pagamentosRaw = item.pagamentos ? item.pagamentos.split(' | ') : []
+      const pagamentosPDF = pagamentosRaw.map(p => {
+        const idx = p.indexOf(': R$ ')
+        const forma = idx >= 0 ? p.substring(0, idx) : p
+        const valor = idx >= 0 ? 'R$ ' + p.substring(idx + 5) : ''
+        return { forma, valor, parcelas: '', detalhes: '' }
+      })
+
+      dados = {
+        cliente: {
+          nome: item.cliente_nome || '',
+          cpf: item.cliente_cpf || '',
+          telefone: (item.cliente_telefone || '').trim(),
+          endereco: item.cliente_endereco || '',
+          cidade: cidadeNome,
+          estado: estadoNome
+        },
+        aparelhos: aparelhosPDF,
+        acessorios: acessoriosPDF,
+        pagamentos: pagamentosPDF,
+        trocas: item.troca_info ? [item.troca_info] : [],
+        garantias: [],
+        observacao: item.observacao || '',
+        totalBruto: formatMoney(item.preco_venda),
+        totalDesconto: formatMoney(0),
+        taxaTotal: formatMoney(item.taxa_total || 0),
+        totalVenda: formatMoney(item.preco_venda)
+      }
+    }
+
     const html = gerarHTMLRecibo({ ...dados, dataVenda: item.data_venda, idVenda: item.id_venda }, item.tipo_venda === 'ORCAMENTO')
-    await gerarPDF(html, item.id_venda + '.pdf')
+    gerarPDF(html, item.id_venda + '.pdf')
   }
 
   const colsFisica = [
@@ -1269,7 +1320,7 @@ function FormVendaOnline({ db, refresh, onClose }) {
 
       if (gerarPdfFlag) {
         const html = gerarHTMLRecibo(pdfData, false)
-        await gerarPDF(html, `RECIBO-${cliente.nome.replace(/\s+/g, '-')}-${form.dataVenda}.pdf`)
+        gerarPDF(html, `RECIBO-${cliente.nome.replace(/\s+/g, '-')}-${form.dataVenda}.pdf`)
       }
 
       refresh()
@@ -1492,7 +1543,7 @@ function FormOrcamento({ db, refresh, onClose }) {
 
       if (gerarPdfFlag) {
         const html = gerarHTMLRecibo(pdfData, true)
-        await gerarPDF(html, `ORCAMENTO-${cliente.nome.replace(/\s+/g, '-')}-${form.dataVenda}.pdf`)
+        gerarPDF(html, `ORCAMENTO-${cliente.nome.replace(/\s+/g, '-')}-${form.dataVenda}.pdf`)
       }
 
       refresh()
