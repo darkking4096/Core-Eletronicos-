@@ -87,6 +87,40 @@ function ConfirmModal({ open, msg, onConfirm, onCancel }) {
   )
 }
 
+function ResetModal({ open, title, msg, onConfirm, onCancel }) {
+  const [texto, setTexto] = useState('')
+  if (!open) return null
+  const ok = texto === 'CONFIRMAR'
+  return (
+    <div style={S.modal}>
+      <div style={{ ...S.modalBox, maxWidth: 440, textAlign: 'center' }}>
+        <div style={{ fontSize: 44, marginBottom: 12 }}>🚨</div>
+        <div style={{ fontSize: 17, color: '#f87171', fontWeight: 700, marginBottom: 8 }}>{title}</div>
+        <div style={{ fontSize: 14, color: '#94a3b8', marginBottom: 20 }}>{msg}</div>
+        <div style={{ marginBottom: 20, textAlign: 'left' }}>
+          <label style={{ ...S.label, color: '#f87171' }}>Digite CONFIRMAR para prosseguir:</label>
+          <input
+            style={{ ...S.input, borderColor: ok ? '#16a34a' : '#334155', textAlign: 'center', letterSpacing: 3, fontWeight: 700 }}
+            value={texto}
+            onChange={e => setTexto(e.target.value.toUpperCase())}
+            placeholder="CONFIRMAR"
+            autoFocus
+          />
+        </div>
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
+          <button style={S.btn('ghost')} onClick={() => { setTexto(''); onCancel(); }}>Cancelar</button>
+          <button
+            style={{ ...S.btn('danger'), opacity: ok ? 1 : 0.35, cursor: ok ? 'pointer' : 'not-allowed' }}
+            onClick={() => { if (ok) { setTexto(''); onConfirm(); } }}
+          >
+            Zerar dados
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function DateFilter({ value, onChange }) {
   const [custom, setCustom] = useState(false)
   const [start, setStart] = useState(daysAgo(30))
@@ -1682,12 +1716,148 @@ function FormOrcamento({ db, refresh, onClose }) {
 // ─────────────────────────────────────────────
 // APP PRINCIPAL
 // ─────────────────────────────────────────────
+// ─────────────────────────────────────────────
+// CONFIGURAÇÕES
+// ─────────────────────────────────────────────
+function Configuracoes({ refresh }) {
+  const [resetModal, setResetModal] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [resultado, setResultado] = useState(null)
+
+  async function executarReset(tables) {
+    setLoading(true)
+    setResetModal(null)
+    try {
+      await Promise.all(tables.map(t => supabase.from(t).delete().not('id', 'is', null)))
+      setResultado({ ok: true, msg: 'Dados zerados com sucesso!' })
+      refresh()
+    } catch (e) {
+      setResultado({ ok: false, msg: 'Erro ao zerar dados: ' + e.message })
+    }
+    setLoading(false)
+  }
+
+  const secoes = [
+    {
+      id: 'aparelhos',
+      icon: '📱',
+      titulo: 'Aparelhos',
+      desc: 'Apaga todo o cadastro de produtos e unidades em estoque de aparelhos.',
+      tables: ['estoque_aparelhos', 'cadastro_aparelhos'],
+      cor: '#3b82f6',
+    },
+    {
+      id: 'acessorios',
+      icon: '🎧',
+      titulo: 'Acessórios',
+      desc: 'Apaga todo o cadastro de acessórios e unidades em estoque.',
+      tables: ['estoque_acessorios', 'cadastro_acessorios'],
+      cor: '#8b5cf6',
+    },
+    {
+      id: 'vendas',
+      icon: '💰',
+      titulo: 'Vendas & Orçamentos',
+      desc: 'Apaga todo o histórico de vendas físicas, online e orçamentos.',
+      tables: ['vendas'],
+      cor: '#f59e0b',
+    },
+    {
+      id: 'custos',
+      icon: '💸',
+      titulo: 'Custos Operacionais',
+      desc: 'Apaga todos os registros de custos e despesas.',
+      tables: ['custos'],
+      cor: '#10b981',
+    },
+  ]
+
+  return (
+    <div>
+      <div style={S.pageTitle}>⚙️ Configurações</div>
+      <div style={S.pageSub}>Gerencie e redefina os dados do sistema</div>
+
+      {resultado && (
+        <div style={{ background: resultado.ok ? '#064e3b' : '#450a0a', border: `1px solid ${resultado.ok ? '#16a34a' : '#dc2626'}`, borderRadius: 10, padding: '12px 16px', marginBottom: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ color: resultado.ok ? '#34d399' : '#f87171', fontSize: 14, fontWeight: 600 }}>
+            {resultado.ok ? '✅' : '❌'} {resultado.msg}
+          </span>
+          <button style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: 18 }} onClick={() => setResultado(null)}>×</button>
+        </div>
+      )}
+
+      {/* Reset Geral */}
+      <div style={{ ...S.card, borderTop: '3px solid #dc2626', marginBottom: 28 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 20 }}>
+          <div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: '#f87171', marginBottom: 6 }}>🚨 Reset Geral</div>
+            <div style={{ fontSize: 13, color: '#94a3b8', lineHeight: 1.6 }}>
+              Apaga <strong style={{ color: '#e2e8f0' }}>TODOS</strong> os dados: aparelhos, acessórios, vendas, orçamentos e custos. <span style={{ color: '#f87171' }}>Ação irreversível.</span>
+            </div>
+          </div>
+          <button
+            style={{ ...S.btn('danger'), whiteSpace: 'nowrap', flexShrink: 0 }}
+            onClick={() => setResetModal({
+              title: '🚨 Reset Geral — Apagar TUDO',
+              msg: 'Isso vai apagar permanentemente todos os aparelhos, acessórios, vendas, orçamentos e custos do sistema.',
+              tables: ['estoque_aparelhos', 'cadastro_aparelhos', 'estoque_acessorios', 'cadastro_acessorios', 'vendas', 'custos'],
+            })}
+          >
+            Zerar Tudo
+          </button>
+        </div>
+      </div>
+
+      {/* Reset por Seção */}
+      <div style={{ fontSize: 11, color: '#475569', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 14 }}>Reset por seção</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+        {secoes.map(s => (
+          <div key={s.id} style={{ ...S.card, borderTop: `3px solid ${s.cor}` }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: '#e2e8f0', marginBottom: 6 }}>{s.icon} {s.titulo}</div>
+            <div style={{ fontSize: 13, color: '#64748b', marginBottom: 18, lineHeight: 1.5 }}>{s.desc}</div>
+            <button
+              style={{ ...S.btn('danger'), fontSize: 13 }}
+              onClick={() => setResetModal({
+                title: `Zerar ${s.titulo}`,
+                msg: s.desc + ' Esta ação é irreversível.',
+                tables: s.tables,
+              })}
+            >
+              Zerar {s.titulo}
+            </button>
+          </div>
+        ))}
+      </div>
+
+      {resetModal && (
+        <ResetModal
+          open={true}
+          title={resetModal.title}
+          msg={resetModal.msg}
+          onConfirm={() => executarReset(resetModal.tables)}
+          onCancel={() => setResetModal(null)}
+        />
+      )}
+
+      {loading && (
+        <div style={S.modal}>
+          <div style={{ ...S.modalBox, maxWidth: 300, textAlign: 'center' }}>
+            <div style={{ fontSize: 32, marginBottom: 12 }}>⏳</div>
+            <div style={{ color: '#e2e8f0', fontSize: 15, fontWeight: 600 }}>Zerando dados...</div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 const NAV = [
   { id: 'dashboard', label: '📊 Dashboard', group: 'Geral' },
   { id: 'estoque-aparelhos', label: '📱 Aparelhos', group: 'Estoque' },
   { id: 'estoque-acessorios', label: '🎧 Acessórios', group: 'Estoque' },
   { id: 'vendas', label: '💰 Vendas', group: 'Operações' },
   { id: 'custos', label: '💸 Custos', group: 'Operações' },
+  { id: 'configuracoes', label: '⚙️ Configurações', group: 'Sistema' },
 ]
 
 export default function App() {
@@ -1759,6 +1929,7 @@ export default function App() {
             {page === 'estoque-acessorios' && <EstoqueAcessorios db={db} refresh={loadAll} />}
             {page === 'vendas' && <Vendas db={db} refresh={loadAll} />}
             {page === 'custos' && <Custos db={db} refresh={loadAll} />}
+            {page === 'configuracoes' && <Configuracoes refresh={loadAll} />}
           </>
         )}
       </div>
