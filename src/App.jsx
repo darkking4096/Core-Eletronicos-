@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from './lib/supabase.js'
 import { formatMoney, formatDate, today, daysAgo, genId } from './utils/formatters.js'
 import { TIPOS_CUSTO, CATEGORIAS_CUSTO, TIPOS_ACESSORIO, FORMAS_PAGAMENTO, MARCAS_TROCA, CAPACIDADES, MARCAS_APARELHO, TIPO_VENDA, getTaxaPercent } from './utils/constants.js'
-import { obterGarantia } from './utils/garantias.js'
+import { obterGarantia, calcGarantiaDate } from './utils/garantias.js'
 import { gerarHTMLRecibo, gerarPDF } from './utils/pdfTemplates.js'
 
 // ─────────────────────────────────────────────
@@ -1246,18 +1246,22 @@ function FormVendaOnline({ db, refresh, onClose }) {
         const modelo = estoqueItem?.modelo || ap.descricao || cod
         const capacidade = estoqueItem?.capacidade || ''
         const cor = estoqueItem?.cor || ''
-        const descPDF = `${marca} ${modelo} ${capacidade} ${cor}`.trim() + (ap.condicao === 'seminovo' ? ' - SEMI-NOVO' : ' - NOVO') + (ap.imei ? ` | IMEI ${ap.imei}` : '')
-        aparelhosPDF.push({ descricao: descPDF, qtd: 1, valorUnitario: formatMoney(ap.preco), desconto: '-', valorTotal: formatMoney(ap.preco) })
         const garantia = obterGarantia(marca, modelo, ap.condicao)
+        const garantiaDate = calcGarantiaDate(form.dataVenda, garantia.dias)
+        const condicaoStr = ap.condicao === 'seminovo' ? 'SEMI-NOVO' : 'NOVO'
+        const descPDF = `CELULAR - ${marca} ${modelo} ${capacidade} - ${condicaoStr} - ${cor}` +
+          (ap.imei ? ` | IMEI ${ap.imei}` : '') +
+          ` - Garantia até:${garantiaDate}`
+        aparelhosPDF.push({ descricao: descPDF, qtd: 1, valorUnitario: formatMoney(ap.preco), desconto: '-', valorTotal: formatMoney(ap.preco) })
         if (!garantias.find(g => g.titulo === garantia.titulo)) garantias.push(garantia)
       }
 
       const acessoriosPDF = acessorios.filter(a => a.cod || a.descricao).map(a => ({
-        descricao: `${a.tipo === 'brinde' ? '🎁 BRINDE - ' : ''}${a.cod || a.descricao}`,
+        descricao: `ACESSÓRIOS - ${a.cod || a.descricao}${a.tipo === 'brinde' ? ' - BRINDE' : ''}`,
         qtd: a.qtd,
         valorUnitario: formatMoney(a.preco),
         desconto: a.tipo === 'brinde' ? formatMoney(Number(a.preco) * Number(a.qtd)) : '-',
-        valorTotal: a.tipo === 'brinde' ? 'BRINDE' : formatMoney(Number(a.preco) * Number(a.qtd))
+        valorTotal: a.tipo === 'brinde' ? 'R$ 0,00' : formatMoney(Number(a.preco) * Number(a.qtd))
       }))
 
       const pagamentosPDF = pagamentos.filter(p => p.forma && p.forma !== 'TROCA').map(p => {
