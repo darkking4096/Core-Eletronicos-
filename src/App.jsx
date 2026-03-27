@@ -121,6 +121,45 @@ function ResetModal({ open, title, msg, onConfirm, onCancel }) {
   )
 }
 
+function BulkDeleteModal({ open, title, count, onConfirm, onCancel, children }) {
+  const [texto, setTexto] = useState('')
+  if (!open) return null
+  const ok = texto === 'CONFIRMAR' && count > 0
+  return (
+    <div style={S.modal}>
+      <div style={{ ...S.modalBox, maxWidth: 480 }}>
+        <div style={{ fontSize: 36, marginBottom: 10, textAlign: 'center' }}>🗑️</div>
+        <div style={{ fontSize: 17, color: '#f87171', fontWeight: 700, marginBottom: 16, textAlign: 'center' }}>{title}</div>
+        {children}
+        <div style={{ background: '#0f172a', borderRadius: 8, padding: '10px 16px', marginBottom: 16, textAlign: 'center' }}>
+          <span style={{ color: count > 0 ? '#f87171' : '#64748b', fontWeight: 700, fontSize: 14 }}>
+            {count > 0 ? `⚠️ ${count} registro(s) serão excluídos permanentemente` : '— Nenhum registro encontrado com esses filtros —'}
+          </span>
+        </div>
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ ...S.label, color: '#f87171' }}>Digite CONFIRMAR para prosseguir:</label>
+          <input
+            style={{ ...S.input, borderColor: ok ? '#16a34a' : '#334155', textAlign: 'center', letterSpacing: 3, fontWeight: 700 }}
+            value={texto}
+            onChange={e => setTexto(e.target.value.toUpperCase())}
+            placeholder="CONFIRMAR"
+            autoFocus
+          />
+        </div>
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
+          <button style={S.btn('ghost')} onClick={() => { setTexto(''); onCancel(); }}>Cancelar</button>
+          <button
+            style={{ ...S.btn('danger'), opacity: ok ? 1 : 0.35, cursor: ok ? 'pointer' : 'not-allowed' }}
+            onClick={() => { if (ok) { setTexto(''); onConfirm(); } }}
+          >
+            Excluir {count} registro(s)
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function DateFilter({ value, onChange }) {
   const [custom, setCustom] = useState(false)
   const [start, setStart] = useState(daysAgo(30))
@@ -360,6 +399,9 @@ function EstoqueAparelhos({ db, refresh }) {
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState('')
   const [confirmItem, setConfirmItem] = useState(null)
+  const [bulkOpen, setBulkOpen] = useState(false)
+  const [bulkStatus, setBulkStatus] = useState('vendido')
+  const [bulkDataAte, setBulkDataAte] = useState('')
 
   function openModal(item = null) {
     setEditItem(item)
@@ -437,6 +479,20 @@ function EstoqueAparelhos({ db, refresh }) {
     refresh()
   }
 
+  const bulkPreview = (db.estoque_aparelhos || []).filter(item => {
+    if (bulkStatus !== 'todos' && item.status !== bulkStatus) return false
+    if (bulkDataAte && item.data_aquisicao > bulkDataAte) return false
+    return true
+  })
+
+  async function doBulkDelete() {
+    const ids = bulkPreview.map(i => i.id)
+    if (ids.length === 0) return
+    await supabase.from('estoque_aparelhos').delete().in('id', ids)
+    setBulkOpen(false)
+    refresh()
+  }
+
   // Autocomplete cadastro para preencher ao digitar código no estoque
   function onCodChange(val) {
     const cod = typeof val === 'string' ? val : val.cod
@@ -473,7 +529,12 @@ function EstoqueAparelhos({ db, refresh }) {
           <div style={S.pageTitle}>Estoque de Aparelhos</div>
           <div style={S.pageSub}>Cadastro e controle de unidades</div>
         </div>
-        <button style={S.btn()} onClick={() => openModal()}>+ Adicionar</button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {tab === 'estoque' && (
+            <button style={S.btn('danger')} onClick={() => setBulkOpen(true)}>🗑️ Excluir em Lote</button>
+          )}
+          <button style={S.btn()} onClick={() => openModal()}>+ Adicionar</button>
+        </div>
       </div>
       <div style={S.tabs}>
         <button style={S.tab(tab === 'cadastro')} onClick={() => setTab('cadastro')}>Cadastro de Produtos</button>
@@ -553,6 +614,30 @@ function EstoqueAparelhos({ db, refresh }) {
         </div>
       </Modal>
       <ConfirmModal open={!!confirmItem} msg={`Excluir ${confirmItem?.cod}?`} onConfirm={() => doExcluir(confirmItem)} onCancel={() => setConfirmItem(null)} />
+
+      <BulkDeleteModal
+        open={bulkOpen}
+        title="Excluir Aparelhos em Lote"
+        count={bulkPreview.length}
+        onConfirm={doBulkDelete}
+        onCancel={() => setBulkOpen(false)}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 16 }}>
+          <div style={S.formGroup}>
+            <label style={S.label}>Status dos aparelhos</label>
+            <select style={S.select} value={bulkStatus} onChange={e => setBulkStatus(e.target.value)}>
+              <option value="vendido">Vendidos</option>
+              <option value="disponivel">Disponíveis</option>
+              <option value="todos">Todos os status</option>
+            </select>
+          </div>
+          <div style={S.formGroup}>
+            <label style={S.label}>Adquiridos até (opcional)</label>
+            <input style={S.input} type="date" value={bulkDataAte} onChange={e => setBulkDataAte(e.target.value)} />
+            {bulkDataAte && <span style={{ fontSize: 11, color: '#64748b', marginTop: 3, display: 'block' }}>← remove esse filtro para não limitar por data</span>}
+          </div>
+        </div>
+      </BulkDeleteModal>
     </div>
   )
 }
@@ -568,6 +653,9 @@ function EstoqueAcessorios({ db, refresh }) {
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState('')
   const [confirmItem, setConfirmItem] = useState(null)
+  const [bulkOpen, setBulkOpen] = useState(false)
+  const [bulkQtdMax, setBulkQtdMax] = useState('0')
+  const [bulkDataAte, setBulkDataAte] = useState('')
 
   function openModal(item = null) {
     setEditItem(item)
@@ -631,6 +719,23 @@ function EstoqueAcessorios({ db, refresh }) {
     refresh()
   }
 
+  const bulkPreviewAcess = (db.estoque_acessorios || []).filter(item => {
+    const hasQtd = bulkQtdMax !== ''
+    const hasDate = !!bulkDataAte
+    if (!hasQtd && !hasDate) return false
+    if (hasQtd && Number(item.quantidade) > Number(bulkQtdMax)) return false
+    if (hasDate && item.data_aquisicao > bulkDataAte) return false
+    return true
+  })
+
+  async function doBulkDeleteAcess() {
+    const ids = bulkPreviewAcess.map(i => i.id)
+    if (ids.length === 0) return
+    await supabase.from('estoque_acessorios').delete().in('id', ids)
+    setBulkOpen(false)
+    refresh()
+  }
+
   function onCodSelect(val) {
     const cod = typeof val === 'string' ? val : val.cod
     const cat = (db.cadastro_acessorios || []).find(c => c.cod === cod.toUpperCase())
@@ -660,7 +765,12 @@ function EstoqueAcessorios({ db, refresh }) {
           <div style={S.pageTitle}>Estoque de Acessórios</div>
           <div style={S.pageSub}>Cadastro e entradas de acessórios</div>
         </div>
-        <button style={S.btn()} onClick={() => openModal()}>+ Adicionar</button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {tab === 'estoque' && (
+            <button style={S.btn('danger')} onClick={() => setBulkOpen(true)}>🗑️ Excluir em Lote</button>
+          )}
+          <button style={S.btn()} onClick={() => openModal()}>+ Adicionar</button>
+        </div>
       </div>
       <div style={S.tabs}>
         <button style={S.tab(tab === 'cadastro')} onClick={() => setTab('cadastro')}>Cadastro</button>
@@ -726,6 +836,33 @@ function EstoqueAcessorios({ db, refresh }) {
         </div>
       </Modal>
       <ConfirmModal open={!!confirmItem} msg={`Excluir ${confirmItem?.cod}?`} onConfirm={() => doExcluir(confirmItem)} onCancel={() => setConfirmItem(null)} />
+
+      <BulkDeleteModal
+        open={bulkOpen}
+        title="Excluir Acessórios em Lote"
+        count={bulkPreviewAcess.length}
+        onConfirm={doBulkDeleteAcess}
+        onCancel={() => setBulkOpen(false)}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 16 }}>
+          <div style={S.formGroup}>
+            <label style={S.label}>Quantidade máxima (≤)</label>
+            <input
+              style={S.input}
+              type="number"
+              min="0"
+              value={bulkQtdMax}
+              onChange={e => setBulkQtdMax(e.target.value)}
+              placeholder="Ex: 0 = apenas zerados"
+            />
+            <span style={{ fontSize: 11, color: '#64748b', marginTop: 3, display: 'block' }}>Exclui lotes com quantidade ≤ esse valor. Deixe em branco para ignorar.</span>
+          </div>
+          <div style={S.formGroup}>
+            <label style={S.label}>Adquiridos até (opcional)</label>
+            <input style={S.input} type="date" value={bulkDataAte} onChange={e => setBulkDataAte(e.target.value)} />
+          </div>
+        </div>
+      </BulkDeleteModal>
     </div>
   )
 }
