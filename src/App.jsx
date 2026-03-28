@@ -691,7 +691,7 @@ function EstoqueAcessorios({ db, refresh }) {
           const maxNum = existingCods.length > 0 ? Math.max(...existingCods.map(c => parseInt(c.replace('AC', '')))) : 0
           cod = 'AC' + String(maxNum + 1).padStart(3, '0')
         }
-        const data = { cod, tipo: form.tipo, descricao: (form.descricao || '').toUpperCase() }
+        const data = { cod, tipo: form.tipo, descricao: (form.descricao || '').toUpperCase(), preco_venda: Number(form.preco_venda) || 0 }
         if (editItem) await supabase.from('cadastro_acessorios').update(data).eq('id', editItem.id)
         else await supabase.from('cadastro_acessorios').insert(data)
       } else {
@@ -762,6 +762,7 @@ function EstoqueAcessorios({ db, refresh }) {
     { key: 'cod', label: 'Código' },
     { key: 'tipo', label: 'Tipo' },
     { key: 'descricao', label: 'Descrição' },
+    { key: 'preco_venda', label: 'Preço Venda', render: v => v > 0 ? formatMoney(v) : '-' },
   ]
 
   const colsEstoque = [
@@ -829,6 +830,12 @@ function EstoqueAcessorios({ db, refresh }) {
             <input style={S.input} value={form.descricao || ''} onChange={e => setForm(f => ({ ...f, descricao: e.target.value.toUpperCase() }))} placeholder="Ex: CAPINHA XIAOMI NOTE 14" />
           </div>
         </div>
+        {tab === 'cadastro' && (
+          <div style={S.formGroup}>
+            <label style={S.label}>Preço de Venda (R$)</label>
+            <input style={S.input} type="number" step="0.01" value={form.preco_venda || ''} onChange={e => setForm(f => ({ ...f, preco_venda: e.target.value }))} placeholder="Ex: 25.00 — usado no PDF quando acessório é brinde" />
+          </div>
+        )}
         {tab === 'estoque' && (
           <div style={S.row('1fr 1fr 1fr')}>
             <div style={S.formGroup}>
@@ -1147,6 +1154,36 @@ function Vendas({ db, refresh }) {
         totalDesconto: totalDescontoAc > 0 ? formatMoney(totalDescontoAc) : 'R$ 0,00',
         taxaTotal: formatMoney(item.taxa_total || 0),
         totalVenda: formatMoney(item.preco_venda)
+      }
+    }
+
+    // ── Corrigir acessórios com preço R$ 0,00 usando preco_venda do cadastro ─
+    if (dados && dados.acessorios && dados.acessorios.length > 0) {
+      const acessoriosCods = (item.acessorios_codigos || '').split(/[,|]/).map(c => c.trim().toUpperCase()).filter(Boolean)
+      let alterou = false
+      const acessoriosCorrigidos = dados.acessorios.map((ac, i) => {
+        const precoAtual = parseMoney(ac.valorUnitario || 'R$ 0,00')
+        if (precoAtual > 0) return ac  // já tem preço — manter
+        // Sem preço: buscar pelo código da venda → preco_venda do cadastro
+        const cod = acessoriosCods[i] || ''
+        const cat = cod ? (db.cadastro_acessorios || []).find(c => c.cod === cod) : null
+        const preco = cat ? (Number(cat.preco_venda) || 0) : 0
+        if (preco <= 0) return ac  // nenhum preço disponível, manter como está
+        alterou = true
+        const qtd = Number(ac.qtd) || 1
+        const subtotal = preco * qtd
+        return { ...ac, valorUnitario: formatMoney(preco), desconto: formatMoney(subtotal), valorTotal: 'R$ 0,00' }
+      })
+      if (alterou) {
+        const totalDescontoAc = acessoriosCorrigidos.reduce(
+          (s, a) => s + (a.desconto && a.desconto !== '-' ? parseMoney(a.desconto) : 0), 0)
+        dados = {
+          ...dados,
+          acessorios: acessoriosCorrigidos,
+          totalBruto: formatMoney(Number(item.preco_venda) + totalDescontoAc),
+          totalDesconto: totalDescontoAc > 0 ? formatMoney(totalDescontoAc) : 'R$ 0,00',
+          totalVenda: formatMoney(item.preco_venda)
+        }
       }
     }
 
@@ -1722,7 +1759,16 @@ function FormVendaOnline({ db, refresh, onClose }) {
             </div>
             <div style={S.row('2fr 1fr 1fr')}>
               <div><label style={S.label}>Código / Descrição</label>
-                <Autocomplete value={ac.cod} onChange={v => { const cod = typeof v === 'string' ? v : v.cod; const cat = (db.cadastro_acessorios || []).find(c => c.cod === cod); setAc(i, 'cod', cod); if (cat) setAc(i, 'descricao', cat.descricao) }} options={db.cadastro_acessorios || []} placeholder="Ex: AC001 ou Cabo" getLabel={o => typeof o === 'string' ? o : `${o.cod} - ${o.descricao}`} />
+                <Autocomplete value={ac.cod} onChange={v => {
+                  const cod = typeof v === 'string' ? v : v.cod
+                  const cat = (db.cadastro_acessorios || []).find(c => c.cod === (typeof cod === 'string' ? cod.toUpperCase() : cod))
+                  setAc(i, 'cod', cod)
+                  if (cat) {
+                    setAc(i, 'descricao', cat.descricao)
+                    // Auto-preencher com preço de venda do cadastro se ainda não foi definido
+                    if ((!ac.preco || ac.preco === 0) && cat.preco_venda > 0) setAc(i, 'preco', cat.preco_venda)
+                  }
+                }} options={db.cadastro_acessorios || []} placeholder="Ex: AC001 ou Cabo" getLabel={o => typeof o === 'string' ? o : `${o.cod} - ${o.descricao}`} />
               </div>
               <div><label style={S.label}>Qtd</label><input style={S.input} type="number" min="1" value={ac.qtd} onChange={e => setAc(i, 'qtd', e.target.value)} /></div>
               <div><label style={S.label}>Valor (R$)</label><input style={S.input} type="number" step="0.01" value={ac.preco} onChange={e => setAc(i, 'preco', e.target.value)} /></div>
