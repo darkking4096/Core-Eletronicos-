@@ -267,9 +267,36 @@ function Autocomplete({ value, onChange, options, placeholder, getLabel }) {
   const [query, setQuery] = useState(value || '')
   const label = getLabel || (o => o)
 
+  // Sincroniza o campo interno quando o valor externo muda (ex: ao limpar formulário)
+  useEffect(() => {
+    setQuery(value || '')
+  }, [value])
+
   const filtered = query.length >= 1
     ? options.filter(o => label(o).toLowerCase().includes(query.toLowerCase())).slice(0, 8)
     : []
+
+  function handleSelect(o) {
+    onChange(o)
+    setQuery(label(o))
+    setOpen(false)
+  }
+
+  function handleKeyDown(e) {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      if (filtered.length > 0) {
+        // Seleciona o primeiro resultado da lista
+        handleSelect(filtered[0])
+      } else {
+        // Tenta busca exata por código (sem sugestões) e dispara onChange com string
+        onChange(query)
+        setOpen(false)
+      }
+    } else if (e.key === 'Escape') {
+      setOpen(false)
+    }
+  }
 
   return (
     <div style={{ position: 'relative' }}>
@@ -280,12 +307,13 @@ function Autocomplete({ value, onChange, options, placeholder, getLabel }) {
         onChange={e => { setQuery(e.target.value); setOpen(true); onChange(e.target.value) }}
         onFocus={() => setOpen(true)}
         onBlur={() => setTimeout(() => setOpen(false), 150)}
+        onKeyDown={handleKeyDown}
       />
       {open && filtered.length > 0 && (
         <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#0f172a', border: '1px solid #334155', borderRadius: 8, zIndex: 200, maxHeight: 220, overflowY: 'auto' }}>
           {filtered.map((o, i) => (
             <div key={i} style={{ padding: '8px 12px', cursor: 'pointer', color: '#e2e8f0', fontSize: 13, borderBottom: '1px solid #1e293b' }}
-              onMouseDown={() => { onChange(o); setQuery(label(o)); setOpen(false) }}>
+              onMouseDown={() => handleSelect(o)}>
               {label(o)}
             </div>
           ))}
@@ -305,15 +333,14 @@ function Dashboard({ db }) {
   useEffect(() => {
     const vendas = (db.vendas || []).filter(v => v.data_venda >= filter.start && v.data_venda <= filter.end)
     const custos = (db.custos || []).filter(c => c.data >= filter.start && c.data <= filter.end)
-    const estoqueAp = (db.estoque_aparelhos || []).filter(e => e.data_aquisicao >= filter.start && e.data_aquisicao <= filter.end)
-    const estoqueAc = (db.estoque_acessorios || []).filter(e => e.data_aquisicao >= filter.start && e.data_aquisicao <= filter.end)
 
     const totalVendas = vendas.length
     const lucroPorVenda = vendas.reduce((s, v) => s + (Number(v.lucro_venda) || 0), 0)
     const custosOp = custos.filter(c => c.tipo !== 'ESTOQUE DE APARELHOS' && c.tipo !== 'ACESSÓRIOS').reduce((s, c) => s + (Number(c.valor) || 0), 0)
     const lucroReal = lucroPorVenda - custosOp
-    const investAp = estoqueAp.reduce((s, e) => s + (Number(e.custo) || 0), 0)
-    const investAc = estoqueAc.reduce((s, e) => s + (Number(e.quantidade) * Number(e.custo_unitario) || 0), 0)
+    // Investimento = estoque atual (todos os aparelhos restantes + acessórios com quantidade > 0)
+    const investAp = (db.estoque_aparelhos || []).reduce((s, e) => s + (Number(e.custo) || 0), 0)
+    const investAc = (db.estoque_acessorios || []).filter(e => Number(e.quantidade) > 0).reduce((s, e) => s + (Number(e.quantidade) * Number(e.custo_unitario) || 0), 0)
 
     // Gastos por categoria
     const gastosPorTipo = {}
@@ -400,7 +427,6 @@ function EstoqueAparelhos({ db, refresh }) {
   const [msg, setMsg] = useState('')
   const [confirmItem, setConfirmItem] = useState(null)
   const [bulkOpen, setBulkOpen] = useState(false)
-  const [bulkStatus, setBulkStatus] = useState('vendido')
   const [bulkDataAte, setBulkDataAte] = useState('')
 
   function openModal(item = null) {
@@ -480,7 +506,6 @@ function EstoqueAparelhos({ db, refresh }) {
   }
 
   const bulkPreview = (db.estoque_aparelhos || []).filter(item => {
-    if (bulkStatus !== 'todos' && item.status !== bulkStatus) return false
     if (bulkDataAte && item.data_aquisicao > bulkDataAte) return false
     return true
   })
@@ -519,7 +544,6 @@ function EstoqueAparelhos({ db, refresh }) {
     { key: 'cor', label: 'Cor' },
     { key: 'custo', label: 'Custo', render: v => formatMoney(v) },
     { key: 'data_aquisicao', label: 'Aquisição', render: v => formatDate(v) },
-    { key: 'status', label: 'Status', render: v => <span style={S.badge(v === 'disponivel' ? 'green' : 'red')}>{v === 'disponivel' ? 'Disponível' : 'Vendido'}</span> },
   ]
 
   return (
@@ -556,11 +580,11 @@ function EstoqueAparelhos({ db, refresh }) {
             <Autocomplete
               value={form.cod || ''}
               onChange={onCodChange}
-              options={db.estoque_aparelhos || []}
-              placeholder="Ex: AP001-001"
-              getLabel={o => typeof o === 'string' ? o : o.cod}
+              options={db.cadastro_aparelhos || []}
+              placeholder="Ex: AP001 — digite para buscar do cadastro"
+              getLabel={o => typeof o === 'string' ? o : `${o.cod} - ${o.marca} ${o.modelo} ${o.capacidade} ${o.cor}`}
             />
-            <div style={{ fontSize: 11, color: '#475569', marginTop: 4 }}>Se for produto novo, o código será gerado automaticamente</div>
+            <div style={{ fontSize: 11, color: '#475569', marginTop: 4 }}>Digite o código e pressione Enter para preencher os campos automaticamente</div>
           </div>
         )}
         {tab === 'cadastro' && (
@@ -623,14 +647,6 @@ function EstoqueAparelhos({ db, refresh }) {
         onCancel={() => setBulkOpen(false)}
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 16 }}>
-          <div style={S.formGroup}>
-            <label style={S.label}>Status dos aparelhos</label>
-            <select style={S.select} value={bulkStatus} onChange={e => setBulkStatus(e.target.value)}>
-              <option value="vendido">Vendidos</option>
-              <option value="disponivel">Disponíveis</option>
-              <option value="todos">Todos os status</option>
-            </select>
-          </div>
           <div style={S.formGroup}>
             <label style={S.label}>Adquiridos até (opcional)</label>
             <input style={S.input} type="date" value={bulkDataAte} onChange={e => setBulkDataAte(e.target.value)} />
@@ -1236,9 +1252,9 @@ function FormVendaFisica({ db, refresh, onClose }) {
         items_json: { aparelhos, acessorios, pagamentos, dataVenda },
       }
       await supabase.from('vendas').insert(venda)
-      // Marcar aparelhos como vendidos
+      // Remover aparelhos vendidos do estoque
       for (const cod of codigos) {
-        await supabase.from('estoque_aparelhos').update({ status: 'vendido' }).eq('cod', cod)
+        await supabase.from('estoque_aparelhos').delete().eq('cod', cod)
       }
       refresh()
       onClose()
@@ -1270,7 +1286,7 @@ function FormVendaFisica({ db, refresh, onClose }) {
                 <Autocomplete
                   value={ap.cod}
                   onChange={v => setAparelho(i, 'cod', typeof v === 'string' ? v : v.cod)}
-                  options={(db.estoque_aparelhos || []).filter(e => e.status === 'disponivel')}
+                  options={db.estoque_aparelhos || []}
                   placeholder="Ex: AP001-001"
                   getLabel={o => typeof o === 'string' ? o : `${o.cod} - ${o.marca} ${o.modelo} ${o.capacidade}`}
                 />
@@ -1522,8 +1538,9 @@ function FormVendaOnline({ db, refresh, onClose }) {
       }
 
       await supabase.from('vendas').insert(venda)
+      // Remover aparelhos vendidos do estoque
       for (const cod of codigos) {
-        await supabase.from('estoque_aparelhos').update({ status: 'vendido' }).eq('cod', cod)
+        await supabase.from('estoque_aparelhos').delete().eq('cod', cod)
       }
 
       if (gerarPdfFlag) {
@@ -1580,7 +1597,7 @@ function FormVendaOnline({ db, refresh, onClose }) {
             </div>
             <div style={S.row('2fr 1fr 1fr')}>
               <div><label style={S.label}>Código do Estoque *</label>
-                <Autocomplete value={ap.cod} onChange={v => setAp(i, 'cod', typeof v === 'string' ? v : v.cod)} options={(db.estoque_aparelhos || []).filter(e => e.status === 'disponivel')} placeholder="Ex: AP001-001" getLabel={o => typeof o === 'string' ? o : `${o.cod} - ${o.marca} ${o.modelo}`} />
+                <Autocomplete value={ap.cod} onChange={v => setAp(i, 'cod', typeof v === 'string' ? v : v.cod)} options={db.estoque_aparelhos || []} placeholder="Ex: AP001-001" getLabel={o => typeof o === 'string' ? o : `${o.cod} - ${o.marca} ${o.modelo}`} />
               </div>
               <div><label style={S.label}>Preço de Venda (R$) *</label><input style={S.input} type="number" step="0.01" value={ap.preco} onChange={e => setAp(i, 'preco', e.target.value)} /></div>
               <div><label style={S.label}>Condição</label>
