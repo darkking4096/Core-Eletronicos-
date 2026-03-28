@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from './lib/supabase.js'
-import { formatMoney, formatDate, today, daysAgo, genId } from './utils/formatters.js'
+import { formatMoney, parseMoney, formatDate, today, daysAgo, genId } from './utils/formatters.js'
 import { TIPOS_CUSTO, CATEGORIAS_CUSTO, TIPOS_ACESSORIO, FORMAS_PAGAMENTO, MARCAS_TROCA, CAPACIDADES, MARCAS_APARELHO, TIPO_VENDA, getTaxaPercent } from './utils/constants.js'
 import { obterGarantia, calcGarantiaDate } from './utils/garantias.js'
 import { gerarHTMLRecibo, gerarPDF } from './utils/pdfTemplates.js'
@@ -1016,32 +1016,74 @@ function Vendas({ db, refresh }) {
   function gerarPDFVenda(item) {
     let dados = item.items_json
 
+    // Validar items_json: descartar se pagamentos estão ×100 ou produto em branco
+    if (dados) {
+      const totalJsonPags = (dados.pagamentos || [])
+        .filter(p => !String(p.forma || '').toUpperCase().includes('TROCA'))
+        .reduce((s, p) => s + parseMoney(p.valor), 0)
+      const precoEsperado = Number(item.preco_venda) || 0
+      const temProdutoBranco = (dados.aparelhos || []).some(a => /CELULAR\s*-\s*-/.test(a.descricao || ''))
+      const pagamentosErrados = precoEsperado > 0 && totalJsonPags > precoEsperado * 5
+      if (temProdutoBranco || pagamentosErrados) dados = null
+    }
+
     if (!dados) {
-      // Reconstruir dados do PDF a partir dos campos da venda (importadas sem items_json)
+      // Reconstruir dados do PDF a partir dos campos da venda
       const cidadeParts = (item.cliente_cidade || '').split('/')
-      const cidadeNome = cidadeParts[0] || ''
-      const estadoNome = cidadeParts[1] || 'GO'
+      const cidadeNome = cidadeParts[0]?.trim() || ''
+      const estadoNome = cidadeParts[1]?.trim() || 'GO'
+
+      // Extrair IMEIs da observação
+      const imeis = (item.observacao || '').match(/\d{10,}/g) || []
+
+      // Detectar marca pelo início da descrição
+      function detectarMarca(desc) {
+        const d = (desc || '').toUpperCase()
+        if (d.startsWith('APPLE') || d.includes('IPHONE') || d.includes('MACBOOK') || d.includes('IPAD')) return 'APPLE'
+        if (d.startsWith('SAMSUNG') || d.includes('GALAXY')) return 'SAMSUNG'
+        if (d.startsWith('XIAOMI')) return 'XIAOMI'
+        if (d.startsWith('POCO')) return 'POCO'
+        if (d.startsWith('REDMI')) return 'REDMI'
+        if (d.startsWith('MOTOROLA') || d.includes('MOTO ')) return 'MOTOROLA'
+        if (d.startsWith('REALME')) return 'REALME'
+        return ''
+      }
 
       const aparelhosDescs = item.aparelhos_descricao ? item.aparelhos_descricao.split(' | ') : []
-      const aparelhosPDF = aparelhosDescs.map(d => ({
-        descricao: d,
-        qtd: 1,
-        valorUnitario: formatMoney(Number(item.preco_venda) / Math.max(aparelhosDescs.length, 1)),
-        desconto: '-',
-        valorTotal: formatMoney(Number(item.preco_venda) / Math.max(aparelhosDescs.length, 1))
-      }))
+      const qtdAp = Math.max(aparelhosDescs.length, 1)
+      const precoUnit = Number(item.preco_venda) / qtdAp
+
+      const garantias = []
+      const garantiasVistas = new Set()
+
+      const aparelhosPDF = aparelhosDescs.map((d, i) => {
+        const marca = detectarMarca(d)
+        const garantia = obterGarantia(marca, d, 'novo')
+        const garantiaDate = calcGarantiaDate(item.data_venda, garantia?.dias || 90)
+        const imei = imeis[i] || ''
+        let descFull = `CELULAR - ${d} - NOVO`
+        if (imei) descFull += ` | IMEI ${imei}`
+        if (garantiaDate) descFull += ` | Garantia até:${garantiaDate}`
+        if (garantia && !garantiasVistas.has(garantia.titulo)) {
+          garantiasVistas.add(garantia.titulo)
+          garantias.push(garantia)
+        }
+        return { descricao: descFull, qtd: 1, valorUnitario: formatMoney(precoUnit), desconto: '-', valorTotal: formatMoney(precoUnit) }
+      })
 
       const acessoriosDescs = item.acessorios_descricao ? item.acessorios_descricao.split(' | ') : []
       const acessoriosPDF = acessoriosDescs.map(d => ({
-        descricao: d, qtd: 1, valorUnitario: formatMoney(0), desconto: '-', valorTotal: formatMoney(0)
+        descricao: `ACESSÓRIOS - ${d}`, qtd: 1, valorUnitario: 'R$ 0,00', desconto: '-', valorTotal: 'R$ 0,00'
       }))
 
+      // Parsear pagamentos — suporta formato inglês ("2349.00") e brasileiro ("2.349,00")
       const pagamentosRaw = item.pagamentos ? item.pagamentos.split(' | ') : []
       const pagamentosPDF = pagamentosRaw.map(p => {
         const idx = p.indexOf(': R$ ')
         const forma = idx >= 0 ? p.substring(0, idx) : p
-        const valor = idx >= 0 ? 'R$ ' + p.substring(idx + 5) : ''
-        return { forma, valor, parcelas: '', detalhes: '' }
+        const valorStr = idx >= 0 ? p.substring(idx + 5).trim() : '0'
+        const valorNum = valorStr.includes(',') ? parseMoney('R$ ' + valorStr) : (parseFloat(valorStr) || 0)
+        return { forma, valor: formatMoney(valorNum), parcelas: '', detalhes: '' }
       })
 
       dados = {
@@ -1057,7 +1099,7 @@ function Vendas({ db, refresh }) {
         acessorios: acessoriosPDF,
         pagamentos: pagamentosPDF,
         trocas: item.troca_info ? [item.troca_info] : [],
-        garantias: [],
+        garantias,
         observacao: item.observacao || '',
         totalBruto: formatMoney(item.preco_venda),
         totalDesconto: formatMoney(0),
