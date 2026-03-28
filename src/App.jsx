@@ -1071,10 +1071,22 @@ function Vendas({ db, refresh }) {
         return { descricao: descFull, qtd: 1, valorUnitario: formatMoney(precoUnit), desconto: '-', valorTotal: formatMoney(precoUnit) }
       })
 
+      const acessoriosCods = (item.acessorios_codigos || '').split(/[,|]/).map(c => c.trim().toUpperCase()).filter(Boolean)
       const acessoriosDescs = item.acessorios_descricao ? item.acessorios_descricao.split(' | ') : []
-      const acessoriosPDF = acessoriosDescs.map(d => ({
-        descricao: `ACESSÓRIOS - ${d}`, qtd: 1, valorUnitario: 'R$ 0,00', desconto: '-', valorTotal: 'R$ 0,00'
-      }))
+      const acessoriosPDF = acessoriosDescs.map((d, i) => {
+        const cod = acessoriosCods[i] || ''
+        const estoqueAc = cod ? (db.estoque_acessorios || []).find(a => a.cod === cod) : null
+        const preco = estoqueAc ? Number(estoqueAc.custo_unitario) || 0 : 0
+        const qtdMatch = d.match(/^(\d+)x\s/i)
+        const qtd = qtdMatch ? parseInt(qtdMatch[1]) : 1
+        const subtotal = preco * qtd
+        return {
+          descricao: `ACESSÓRIOS - ${d}`, qtd,
+          valorUnitario: preco > 0 ? formatMoney(preco) : 'R$ 0,00',
+          desconto: subtotal > 0 ? formatMoney(subtotal) : '-',
+          valorTotal: 'R$ 0,00'
+        }
+      })
 
       // Parsear pagamentos — suporta formato inglês ("2349.00") e brasileiro ("2.349,00")
       const pagamentosRaw = item.pagamentos ? item.pagamentos.split(' | ') : []
@@ -1085,6 +1097,8 @@ function Vendas({ db, refresh }) {
         const valorNum = valorStr.includes(',') ? parseMoney('R$ ' + valorStr) : (parseFloat(valorStr) || 0)
         return { forma, valor: formatMoney(valorNum), parcelas: '', detalhes: '' }
       })
+
+      const totalDescontoAc = acessoriosPDF.reduce((s, a) => s + (a.desconto && a.desconto !== '-' ? parseMoney(a.desconto) : 0), 0)
 
       dados = {
         cliente: {
@@ -1101,8 +1115,8 @@ function Vendas({ db, refresh }) {
         trocas: item.troca_info ? [item.troca_info] : [],
         garantias,
         observacao: item.observacao || '',
-        totalBruto: formatMoney(item.preco_venda),
-        totalDesconto: formatMoney(0),
+        totalBruto: formatMoney(Number(item.preco_venda) + totalDescontoAc),
+        totalDesconto: totalDescontoAc > 0 ? formatMoney(totalDescontoAc) : 'R$ 0,00',
         taxaTotal: formatMoney(item.taxa_total || 0),
         totalVenda: formatMoney(item.preco_venda)
       }
@@ -1541,11 +1555,16 @@ function FormVendaOnline({ db, refresh, onClose }) {
       const precoVenda = totalBruto
       const lucroVenda = precoVenda - custoAparelhos - custoAcessorios
 
+      const totalAcessoriosBrinde = acessorios
+        .filter(a => a.tipo === 'brinde')
+        .reduce((s, a) => s + (Number(a.preco) * Number(a.qtd) || 0), 0)
+
       const pdfData = {
         dataVenda: form.dataVenda, idVenda, vendedor: form.vendedor || 'CORE',
         cliente, aparelhos: aparelhosPDF, acessorios: acessoriosPDF, pagamentos: pagamentosPDF,
         trocas: [], garantias, observacao: form.observacao,
-        totalBruto: formatMoney(totalBruto), totalDesconto: formatMoney(0),
+        totalBruto: formatMoney(totalBruto + totalAcessoriosBrinde),
+        totalDesconto: totalAcessoriosBrinde > 0 ? formatMoney(totalAcessoriosBrinde) : 'R$ 0,00',
         taxaTotal: formatMoney(totalTaxas), totalVenda: formatMoney(totalBruto),
       }
 
