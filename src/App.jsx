@@ -1157,18 +1157,19 @@ function Vendas({ db, refresh }) {
       }
     }
 
-    // ── Corrigir acessórios com preço R$ 0,00 usando preco_venda do cadastro ─
+    // ── Aplicar preco_venda do cadastro nos acessórios ────────────────────────
+    // O preco_venda do cadastro prevalece sempre que estiver preenchido —
+    // corrige tanto R$0,00 quanto preços de custo gravados pelo N8N.
     if (dados && dados.acessorios && dados.acessorios.length > 0) {
       const acessoriosCods = (item.acessorios_codigos || '').split(/[,|]/).map(c => c.trim().toUpperCase()).filter(Boolean)
       let alterou = false
       const acessoriosCorrigidos = dados.acessorios.map((ac, i) => {
-        const precoAtual = parseMoney(ac.valorUnitario || 'R$ 0,00')
-        if (precoAtual > 0) return ac  // já tem preço — manter
-        // Sem preço: buscar pelo código da venda → preco_venda do cadastro
         const cod = acessoriosCods[i] || ''
         const cat = cod ? (db.cadastro_acessorios || []).find(c => c.cod === cod) : null
         const preco = cat ? (Number(cat.preco_venda) || 0) : 0
-        if (preco <= 0) return ac  // nenhum preço disponível, manter como está
+        if (preco <= 0) return ac  // sem preco_venda cadastrado — manter como está
+        const precoAtual = parseMoney(ac.valorUnitario || 'R$ 0,00')
+        if (precoAtual === preco) return ac  // já está correto
         alterou = true
         const qtd = Number(ac.qtd) || 1
         const subtotal = preco * qtd
