@@ -979,7 +979,7 @@ function Custos({ db, refresh }) {
         </div>
         <div style={S.formGroup}>
           <label style={S.label}>Observação (opcional)</label>
-          <input style={S.input} value={form.observacao} onChange={e => setForm(f => ({ ...f, observacao: e.target.value }))} placeholder="Detalhes adicionais..." />
+          <textarea style={{ ...S.input, minHeight: 80, resize: 'vertical' }} value={form.observacao} onChange={e => setForm(f => ({ ...f, observacao: e.target.value }))} placeholder="Detalhes adicionais..." />
         </div>
         {msg && <div style={{ color: '#f87171', fontSize: 13, marginBottom: 12 }}>{msg}</div>}
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
@@ -2057,7 +2057,7 @@ function FormVendaOnline({ db, refresh, onClose }) {
 
       <div style={S.formGroup}>
         <label style={S.label}>Observação (opcional)</label>
-        <input style={S.input} value={form.observacao} onChange={e => setForm(f => ({ ...f, observacao: e.target.value }))} placeholder="Ex: IMEI, detalhes adicionais..." />
+        <textarea style={{ ...S.input, minHeight: 80, resize: 'vertical', fontFamily: 'inherit' }} value={form.observacao} onChange={e => setForm(f => ({ ...f, observacao: e.target.value }))} placeholder="Ex: IMEI, detalhes adicionais..." />
       </div>
 
       <div style={{ background: '#0f172a', borderRadius: 10, padding: 16, marginBottom: 16, display: 'flex', gap: 24 }}>
@@ -2231,7 +2231,7 @@ function FormOrcamento({ db, refresh, onClose }) {
 
       <div style={S.formGroup}>
         <label style={S.label}>Observação</label>
-        <input style={S.input} value={form.observacao} onChange={e => setForm(f => ({ ...f, observacao: e.target.value }))} placeholder="Informações adicionais..." />
+        <textarea style={{ ...S.input, minHeight: 80, resize: 'vertical', fontFamily: 'inherit' }} value={form.observacao} onChange={e => setForm(f => ({ ...f, observacao: e.target.value }))} placeholder="Informações adicionais..." />
       </div>
 
       <div style={{ background: '#0f172a', borderRadius: 10, padding: 16, marginBottom: 16 }}>
