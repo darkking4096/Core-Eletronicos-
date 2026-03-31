@@ -5,3 +5,6 @@ dist
 
 # Script de importação (contém dados internos)
 import_data.mjs
+
+# Arquivos temporários do Vite
+vite.config.js.timestamp-*
