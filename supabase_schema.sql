@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS estoque_aparelhos (
   custo NUMERIC(10,2) NOT NULL DEFAULT 0,
   data_aquisicao DATE NOT NULL,
   status TEXT NOT NULL DEFAULT 'disponivel',
+  observacao TEXT,
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
