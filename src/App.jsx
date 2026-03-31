@@ -1417,7 +1417,15 @@ function FormVendaFisica({ db, refresh, onClose }) {
         const tCondicao = pag.trocaCondicao || 'seminovo'
         // Gerar código único para o estoque
         let tCod = pag.trocaCod ? pag.trocaCod.toUpperCase() : ''
-        if (!tCod || (db.estoque_aparelhos || []).find(e => e.cod === tCod)) {
+        if (!tCod) {
+          tCod = genId('TR')
+        } else if (!tCod.includes('-')) {
+          // Código de catálogo sem sufixo (ex: AP001) → gerar instância (ex: AP001-001)
+          const baseCod = tCod
+          const existingInstances = (db.estoque_aparelhos || []).map(e => e.cod).filter(c => c.startsWith(baseCod + '-'))
+          const maxInst = existingInstances.length > 0 ? Math.max(...existingInstances.map(c => parseInt(c.split('-')[1] || 0))) : 0
+          tCod = baseCod + '-' + String(maxInst + 1).padStart(3, '0')
+        } else if ((db.estoque_aparelhos || []).find(e => e.cod === tCod)) {
           tCod = genId('TR')
         }
         // Inserir no catálogo se combinação marca+modelo+capacidade+cor ainda não existir
@@ -1827,7 +1835,15 @@ function FormVendaOnline({ db, refresh, onClose }) {
         const tCusto = Number(pag.trocaPreco) || 0
         const tCondicao = pag.trocaCondicao || 'seminovo'
         let tCod = pag.trocaCod ? pag.trocaCod.toUpperCase() : ''
-        if (!tCod || (db.estoque_aparelhos || []).find(e => e.cod === tCod)) {
+        if (!tCod) {
+          tCod = genId('TR')
+        } else if (!tCod.includes('-')) {
+          // Código de catálogo sem sufixo (ex: AP001) → gerar instância (ex: AP001-001)
+          const baseCod = tCod
+          const existingInstances = (db.estoque_aparelhos || []).map(e => e.cod).filter(c => c.startsWith(baseCod + '-'))
+          const maxInst = existingInstances.length > 0 ? Math.max(...existingInstances.map(c => parseInt(c.split('-')[1] || 0))) : 0
+          tCod = baseCod + '-' + String(maxInst + 1).padStart(3, '0')
+        } else if ((db.estoque_aparelhos || []).find(e => e.cod === tCod)) {
           tCod = genId('TR')
         }
         const jaNosCatalogo = (db.cadastro_aparelhos || []).find(e =>
