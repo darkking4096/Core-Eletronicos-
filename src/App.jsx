@@ -1341,8 +1341,29 @@ function FormVendaFisica({ db, refresh, onClose }) {
         const item = (db.estoque_aparelhos || []).find(e => e.cod === cod)
         if (item) custoAparelhos += Number(item.custo) || 0
       }
+
+      // Calcular custo real dos acessórios (FIFO) e separar para baixa
+      let custoAcessoriosReal = 0
+      const acessoriosParaDebitar = []
+      for (const ac of acessorios) {
+        if (!ac.cod) continue;
+        let qtdRestante = Number(ac.qtd) || 1;
+        const estoqueList = (db.estoque_acessorios || [])
+          .filter(e => e.cod === ac.cod.toUpperCase() && Number(e.quantidade) > 0)
+          .sort((a, b) => new Date(a.data_aquisicao) - new Date(b.data_aquisicao));
+        
+        for (const est of estoqueList) {
+          if (qtdRestante <= 0) break;
+          const estQtd = Number(est.quantidade);
+          const debitar = Math.min(qtdRestante, estQtd);
+          custoAcessoriosReal += debitar * (Number(est.custo_unitario) || 0);
+          acessoriosParaDebitar.push({ id: est.id, qtdDebitar: debitar });
+          qtdRestante -= debitar;
+        }
+      }
+
       const precoVenda = totalVenda
-      const lucroVenda = precoVenda - custoAparelhos - (acessorios.filter(a => a.tipo === 'brinde').reduce((s, a) => s + (Number(a.preco) * Number(a.qtd) || 0), 0))
+      const lucroVenda = precoVenda - custoAparelhos - custoAcessoriosReal
 
       const aparelhosDesc = aparelhos.filter(a => a.cod).map(a => {
         const item = (db.estoque_aparelhos || []).find(e => e.cod === a.cod.toUpperCase())
@@ -1377,6 +1398,18 @@ function FormVendaFisica({ db, refresh, onClose }) {
       // Remover aparelhos vendidos do estoque
       for (const cod of codigos) {
         await supabase.from('estoque_aparelhos').delete().eq('cod', cod)
+      }
+      // Abater acessórios do estoque
+      for (const deb of acessoriosParaDebitar) {
+        const est = (db.estoque_acessorios || []).find(e => e.id === deb.id);
+        if (est) {
+          const newQtd = Number(est.quantidade) - deb.qtdDebitar;
+          if (newQtd <= 0) {
+            await supabase.from('estoque_acessorios').delete().eq('id', deb.id);
+          } else {
+            await supabase.from('estoque_acessorios').update({ quantidade: newQtd }).eq('id', deb.id);
+          }
+        }
       }
       refresh()
       onClose()
@@ -1571,7 +1604,9 @@ function FormVendaOnline({ db, refresh, onClose }) {
 
   async function salvarERgerarPDF(gerarPdfFlag = true) {
     if (!form.dataVenda || !cliente.nome) { setMsg('Data e nome do cliente são obrigatórios'); return }
-    if (aparelhos.filter(a => a.cod).length === 0) { setMsg('Informe pelo menos um aparelho'); return }
+    const aparelhosPreenchidos = aparelhos.filter(a => a.cod).length;
+    const acessoriosPreenchidos = acessorios.filter(a => a.cod || a.descricao).length;
+    if (aparelhosPreenchidos === 0 && acessoriosPreenchidos === 0) { setMsg('Informe pelo menos um aparelho ou acessório'); return }
     setLoading(true)
     try {
       let custoAparelhos = 0
@@ -1617,9 +1652,29 @@ function FormVendaOnline({ db, refresh, onClose }) {
       })
 
       const idVenda = genId('VR')
-      const custoAcessorios = acessorios.reduce((s, a) => s + (Number(a.preco) * Number(a.qtd) || 0), 0)
+
+      // Calcular custo real dos acessórios (FIFO) e separar para baixa
+      let custoAcessoriosReal = 0
+      const acessoriosParaDebitar = []
+      for (const ac of acessorios) {
+        if (!ac.cod) continue;
+        let qtdRestante = Number(ac.qtd) || 1;
+        const estoqueList = (db.estoque_acessorios || [])
+          .filter(e => e.cod === ac.cod.toUpperCase() && Number(e.quantidade) > 0)
+          .sort((a, b) => new Date(a.data_aquisicao) - new Date(b.data_aquisicao));
+        
+        for (const est of estoqueList) {
+          if (qtdRestante <= 0) break;
+          const estQtd = Number(est.quantidade);
+          const debitar = Math.min(qtdRestante, estQtd);
+          custoAcessoriosReal += debitar * (Number(est.custo_unitario) || 0);
+          acessoriosParaDebitar.push({ id: est.id, qtdDebitar: debitar });
+          qtdRestante -= debitar;
+        }
+      }
+
       const precoVenda = totalBruto
-      const lucroVenda = precoVenda - custoAparelhos - custoAcessorios
+      const lucroVenda = precoVenda - custoAparelhos - custoAcessoriosReal
 
       const totalAcessoriosBrinde = acessorios
         .filter(a => a.tipo === 'brinde')
@@ -1659,7 +1714,7 @@ function FormVendaOnline({ db, refresh, onClose }) {
         acessorios_descricao: acessoriosDesc,
         qtd_acessorios: acessorios.length,
         custo_aparelhos: custoAparelhos,
-        custo_acessorios: custoAcessorios,
+        custo_acessorios: custoAcessoriosReal,
         preco_venda: precoVenda,
         lucro_venda: lucroVenda,
         valor_total_pago: totalBruto,
@@ -1673,6 +1728,18 @@ function FormVendaOnline({ db, refresh, onClose }) {
       // Remover aparelhos vendidos do estoque
       for (const cod of codigos) {
         await supabase.from('estoque_aparelhos').delete().eq('cod', cod)
+      }
+      // Abater acessórios do estoque
+      for (const deb of acessoriosParaDebitar) {
+        const est = (db.estoque_acessorios || []).find(e => e.id === deb.id);
+        if (est) {
+          const newQtd = Number(est.quantidade) - deb.qtdDebitar;
+          if (newQtd <= 0) {
+            await supabase.from('estoque_acessorios').delete().eq('id', deb.id);
+          } else {
+            await supabase.from('estoque_acessorios').update({ quantidade: newQtd }).eq('id', deb.id);
+          }
+        }
       }
 
       if (gerarPdfFlag) {
