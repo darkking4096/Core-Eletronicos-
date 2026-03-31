@@ -1364,6 +1364,10 @@ function FormVendaFisica({ db, refresh, onClose }) {
 
       const acessoriosDesc = acessorios.filter(a => a.cod).map(a => `${a.qtd}x ${a.cod}`).join(' | ')
       const pagamentosStr = pagamentos.filter(p => p.forma).map(p => {
+        if (p.forma === 'TROCA') {
+          const desc = [p.trocaMarca, p.trocaModelo, p.trocaCapacidade, p.trocaCor].filter(Boolean).join(' ')
+          return `TROCA (${desc || 'Aparelho'}): R$ ${Number(p.trocaPreco || 0).toFixed(2)}`
+        }
         const taxa = calcTaxa(p)
         return `${p.forma}${p.forma === 'Credito' ? ` ${p.parcelas}x` : ''}: R$ ${p.valor}${taxa > 0 ? ` (taxa: R$ ${taxa.toFixed(2)})` : ''}`
       }).join(' | ')
@@ -1577,7 +1581,25 @@ function FormVendaFisica({ db, refresh, onClose }) {
                 </div>
                 <div style={S.row('1fr 1fr')}>
                   <div><label style={S.label}>Valor da Troca / Custo (R$) *</label><input style={S.input} type="number" step="0.01" value={pag.trocaPreco || ''} onChange={e => setPagamento(i, 'trocaPreco', e.target.value)} placeholder="Valor pago na troca" /></div>
-                  <div><label style={S.label}>Código no Estoque (opcional)</label><input style={S.input} value={pag.trocaCod || ''} onChange={e => setPagamento(i, 'trocaCod', e.target.value)} placeholder="Deixe em branco para gerar automático" /></div>
+                  <div><label style={S.label}>Código no Estoque (opcional)</label>
+                    <Autocomplete
+                      value={pag.trocaCod || ''}
+                      onChange={v => {
+                        const cod = typeof v === 'string' ? v : v.cod
+                        const cat = (db.cadastro_aparelhos || []).find(c => c.cod === (typeof cod === 'string' ? cod.toUpperCase() : cod))
+                        setPagamento(i, 'trocaCod', cod)
+                        if (cat) {
+                          setPagamento(i, 'trocaMarca', cat.marca)
+                          setPagamento(i, 'trocaModelo', cat.modelo)
+                          setPagamento(i, 'trocaCapacidade', cat.capacidade)
+                          setPagamento(i, 'trocaCor', cat.cor)
+                        }
+                      }}
+                      options={db.cadastro_aparelhos || []}
+                      placeholder="Buscar por código ou deixar em branco"
+                      getLabel={o => typeof o === 'string' ? o : `${o.cod} — ${o.marca} ${o.modelo} ${o.capacidade}`}
+                    />
+                  </div>
                 </div>
                 <div><label style={S.label}>Observação (estado, defeitos...)</label><input style={S.input} value={pag.trocaObs || ''} onChange={e => setPagamento(i, 'trocaObs', e.target.value)} placeholder="Ex: Tela trincada, bateria boa" /></div>
               </div>
@@ -1672,7 +1694,17 @@ function FormVendaOnline({ db, refresh, onClose }) {
         valorTotal: a.tipo === 'brinde' ? 'R$ 0,00' : formatMoney(Number(a.preco) * Number(a.qtd))
       }))
 
-      const pagamentosPDF = pagamentos.filter(p => p.forma && p.forma !== 'TROCA').map(p => {
+      const pagamentosPDF = pagamentos.filter(p => p.forma).map(p => {
+        if (p.forma === 'TROCA') {
+          const descParts = [p.trocaMarca, p.trocaModelo, p.trocaCapacidade, p.trocaCor].filter(Boolean)
+          const cond = p.trocaCondicao === 'novo' ? 'Novo' : 'Semi-novo'
+          return {
+            forma: 'TROCA',
+            valor: formatMoney(p.trocaPreco || 0),
+            parcelas: '',
+            detalhes: `${descParts.join(' ')} — ${cond}${p.trocaObs ? ' — ' + p.trocaObs : ''}`
+          }
+        }
         const taxa = calcTaxa(p)
         return {
           forma: p.forma.toUpperCase() + (p.forma === 'Credito' ? ` ${p.parcelas}x` : ''),
@@ -1680,6 +1712,14 @@ function FormVendaOnline({ db, refresh, onClose }) {
           parcelas: p.forma === 'Credito' ? `${p.parcelas}x` : '',
           detalhes: taxa > 0 ? `Taxa: ${formatMoney(taxa)}` : ''
         }
+      })
+      const trocasList = pagamentos.filter(p => p.forma === 'TROCA').map(p => {
+        const parts = [p.trocaMarca, p.trocaModelo, p.trocaCapacidade, p.trocaCor].filter(Boolean)
+        const cond = p.trocaCondicao === 'novo' ? 'Novo' : 'Semi-novo'
+        let linha = parts.join(' ') + ` — ${cond}`
+        if (p.trocaPreco) linha += ` — Valor: ${formatMoney(p.trocaPreco)}`
+        if (p.trocaObs) linha += ` — ${p.trocaObs}`
+        return linha
       })
 
       const idVenda = genId('VR')
@@ -1714,7 +1754,7 @@ function FormVendaOnline({ db, refresh, onClose }) {
       const pdfData = {
         dataVenda: form.dataVenda, idVenda, vendedor: form.vendedor || 'CORE',
         cliente, aparelhos: aparelhosPDF, acessorios: acessoriosPDF, pagamentos: pagamentosPDF,
-        trocas: [], garantias, observacao: form.observacao,
+        trocas: trocasList, garantias, observacao: form.observacao,
         totalBruto: formatMoney(totalBruto + totalAcessoriosBrinde),
         totalDesconto: totalAcessoriosBrinde > 0 ? formatMoney(totalAcessoriosBrinde) : 'R$ 0,00',
         taxaTotal: formatMoney(totalTaxas), totalVenda: formatMoney(totalBruto),
@@ -1727,7 +1767,13 @@ function FormVendaOnline({ db, refresh, onClose }) {
         const label = cat ? cat.tipo : (a.descricao || a.cod)
         return `${a.qtd}x ${label}`
       }).join(' | ')
-      const pagamentosStr = pagamentos.filter(p => p.forma).map(p => `${p.forma}${p.forma === 'Credito' ? ` ${p.parcelas}x` : ''}: R$ ${p.valor}`).join(' | ')
+      const pagamentosStr = pagamentos.filter(p => p.forma).map(p => {
+        if (p.forma === 'TROCA') {
+          const desc = [p.trocaMarca, p.trocaModelo, p.trocaCapacidade, p.trocaCor].filter(Boolean).join(' ')
+          return `TROCA (${desc || 'Aparelho'}): R$ ${Number(p.trocaPreco || 0).toFixed(2)}`
+        }
+        return `${p.forma}${p.forma === 'Credito' ? ` ${p.parcelas}x` : ''}: R$ ${p.valor}`
+      }).join(' | ')
 
       const venda = {
         id_venda: idVenda,
@@ -1966,7 +2012,25 @@ function FormVendaOnline({ db, refresh, onClose }) {
                 </div>
                 <div style={S.row('1fr 1fr')}>
                   <div><label style={S.label}>Valor da Troca / Custo (R$) *</label><input style={S.input} type="number" step="0.01" value={pag.trocaPreco || ''} onChange={e => setPag(i, 'trocaPreco', e.target.value)} placeholder="Valor pago na troca" /></div>
-                  <div><label style={S.label}>Código no Estoque (opcional)</label><input style={S.input} value={pag.trocaCod || ''} onChange={e => setPag(i, 'trocaCod', e.target.value)} placeholder="Deixe em branco para gerar automático" /></div>
+                  <div><label style={S.label}>Código no Estoque (opcional)</label>
+                    <Autocomplete
+                      value={pag.trocaCod || ''}
+                      onChange={v => {
+                        const cod = typeof v === 'string' ? v : v.cod
+                        const cat = (db.cadastro_aparelhos || []).find(c => c.cod === (typeof cod === 'string' ? cod.toUpperCase() : cod))
+                        setPag(i, 'trocaCod', cod)
+                        if (cat) {
+                          setPag(i, 'trocaMarca', cat.marca)
+                          setPag(i, 'trocaModelo', cat.modelo)
+                          setPag(i, 'trocaCapacidade', cat.capacidade)
+                          setPag(i, 'trocaCor', cat.cor)
+                        }
+                      }}
+                      options={db.cadastro_aparelhos || []}
+                      placeholder="Buscar por código ou deixar em branco"
+                      getLabel={o => typeof o === 'string' ? o : `${o.cod} — ${o.marca} ${o.modelo} ${o.capacidade}`}
+                    />
+                  </div>
                 </div>
                 <div><label style={S.label}>Observação (estado, defeitos...)</label><input style={S.input} value={pag.trocaObs || ''} onChange={e => setPag(i, 'trocaObs', e.target.value)} placeholder="Ex: Tela trincada, bateria boa" /></div>
               </div>
