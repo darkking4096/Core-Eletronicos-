@@ -109,14 +109,14 @@ export function gerarHTMLRecibo(pdf, isOrcamento = false) {
   <table style="width:100%;border-collapse:collapse;margin-bottom:12px;">
     <tr>
       <td style="vertical-align:top;width:60px;">
-        <img src="data:image/png;base64,${LOGO_BASE64}" style="width:65px;height:65px;object-fit:contain;" alt="Logo">
+        <img src="${pdf.empresa?.logoHtml || `data:image/png;base64,${LOGO_BASE64}`}" style="width:65px;height:65px;object-fit:contain;" alt="Logo">
       </td>
       <td style="vertical-align:top;padding-left:10px;">
-        <div style="font-size:13px;font-weight:bold;">Core Distribuidora Eletrônicos</div>
+        <div style="font-size:13px;font-weight:bold;">${pdf.empresa?.nome || "Core Distribuidora Eletrônicos"}</div>
         <div style="font-size:9px;color:#333;line-height:1.6;margin-top:3px;">
-          Avenida Nápoli 309 Goiânia GO 74367-970 Shopping Plaza D'Oro<br>
-          Office, sala 309<br>
-          CNPJ: 32.676.141/0001-15 &nbsp;|&nbsp; Telefone: (62) 9613-4005
+          ${pdf.empresa?.enderecoLine1 || "Avenida Nápoli 309 Goiânia GO 74367-970 Shopping Plaza D'Oro"}<br>
+          ${pdf.empresa?.enderecoLine2 || "Office, sala 309"}<br>
+          ${pdf.empresa?.cnpj || pdf.empresa?.telefone ? `CNPJ: ${pdf.empresa.cnpj || "---"} | Telefone: ${pdf.empresa.telefone || "---"}` : "CNPJ: 32.676.141/0001-15 | Telefone: (62) 9613-4005"}
         </div>
       </td>
       <td style="vertical-align:top;text-align:right;white-space:nowrap;">
@@ -206,7 +206,7 @@ export function gerarHTMLRecibo(pdf, isOrcamento = false) {
       <td style="width:50%;text-align:center;padding:0 20px;">
         <div style="border-top:1px solid #333;padding-top:6px;">
           <div style="font-size:10px;color:#555;">Assinatura do vendedor</div>
-          <div style="font-weight:bold;font-size:11px;margin-top:2px;">Core Distribuidora Eletrônicos</div>
+          <div style="font-weight:bold;font-size:11px;margin-top:2px;">${pdf.empresa?.nome || "Core Distribuidora Eletrônicos"}</div>
         </div>
       </td>
     </tr>

@@ -2088,6 +2088,25 @@ function FormOrcamento({ db, refresh, onClose }) {
   const [pagamentos, setPagamentos] = useState([{ forma: '', valor: '', detalhe: '' }])
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState('')
+  const [empresaPersonalizada, setEmpresaPersonalizada] = useState({
+    ativo: false,
+    logoHtml: '',
+    nome: '',
+    enderecoLine1: '',
+    enderecoLine2: '',
+    cnpj: '',
+    telefone: ''
+  })
+
+  function handleLogoUpload(e) {
+    const file = e.target.files[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      setEmpresaPersonalizada(prev => ({ ...prev, logoHtml: ev.target.result }))
+    }
+    reader.readAsDataURL(file)
+  }
 
   function addItem() { setItens(a => [...a, { descricao: '', qtd: 1, preco: '', desconto: 0 }]) }
   function removeItem(i) { setItens(a => a.filter((_, idx) => idx !== i)) }
@@ -2127,6 +2146,7 @@ function FormOrcamento({ db, refresh, onClose }) {
         trocas: [], garantias: [], observacao: form.observacao,
         totalBruto: formatMoney(totalBruto), totalDesconto: formatMoney(0),
         taxaTotal: formatMoney(0), totalVenda: formatMoney(totalBruto),
+        empresa: empresaPersonalizada.ativo ? empresaPersonalizada : null
       }
 
       const itemsDesc = itensPDF.map(it => it.descricao).join(' | ')
@@ -2168,6 +2188,36 @@ function FormOrcamento({ db, refresh, onClose }) {
         <div style={S.formGroup}><label style={S.label}>Data *</label><input style={S.input} type="date" value={form.dataVenda} onChange={e => setForm(f => ({ ...f, dataVenda: e.target.value }))} /></div>
         <div style={S.formGroup}><label style={S.label}>Vendedor</label><input style={S.input} value={form.vendedor} onChange={e => setForm(f => ({ ...f, vendedor: e.target.value }))} /></div>
       </div>
+
+      <div style={{ ...S.card, marginBottom: 16, background: '#1e1b4b', border: '1px solid #4338ca' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: empresaPersonalizada.ativo ? 12 : 0 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: '#a5b4fc' }}>Informações da Empresa (Para Simulação / Concorrência)</div>
+          <button style={S.btn(empresaPersonalizada.ativo ? 'danger' : 'sm')} onClick={() => setEmpresaPersonalizada(p => ({ ...p, ativo: !p.ativo }))} type="button">
+            {empresaPersonalizada.ativo ? '× Remover (Usar Padrão)' : '+ Mudar Empresa'}
+          </button>
+        </div>
+        {empresaPersonalizada.ativo && (
+          <div>
+            <div style={S.row('1fr 2fr')}>
+               <div style={S.formGroup}>
+                 <label style={S.label}>Logo (Imagem para PDF)</label>
+                 <input style={{ ...S.input, padding: '8px', cursor: 'pointer' }} type="file" accept="image/*" onChange={handleLogoUpload} />
+                 {empresaPersonalizada.logoHtml && <img src={empresaPersonalizada.logoHtml} style={{ width: 40, height: 40, objectFit: 'contain', marginTop: 8 }} alt="logo override" />}
+               </div>
+               <div style={S.formGroup}><label style={S.label}>Nome da Empresa</label><input style={S.input} value={empresaPersonalizada.nome} onChange={e => setEmpresaPersonalizada(p => ({ ...p, nome: e.target.value }))} placeholder="Nome a aparecer no PDF" /></div>
+            </div>
+            <div style={S.row('1fr 1fr')}>
+               <div style={S.formGroup}><label style={S.label}>Endereço (Linha 1)</label><input style={S.input} value={empresaPersonalizada.enderecoLine1} onChange={e => setEmpresaPersonalizada(p => ({ ...p, enderecoLine1: e.target.value }))} placeholder="Ex: Av. Exemplo 123" /></div>
+               <div style={S.formGroup}><label style={S.label}>Endereço (Linha 2)</label><input style={S.input} value={empresaPersonalizada.enderecoLine2} onChange={e => setEmpresaPersonalizada(p => ({ ...p, enderecoLine2: e.target.value }))} placeholder="Ex: Bairro Centro, Cidade - UF" /></div>
+            </div>
+            <div style={S.row('1fr 1fr')}>
+               <div style={S.formGroup}><label style={S.label}>CNPJ</label><input style={S.input} value={empresaPersonalizada.cnpj} onChange={e => setEmpresaPersonalizada(p => ({ ...p, cnpj: e.target.value }))} placeholder="Ex: 00.000.000/0001-00" /></div>
+               <div style={S.formGroup}><label style={S.label}>Telefone</label><input style={S.input} value={empresaPersonalizada.telefone} onChange={e => setEmpresaPersonalizada(p => ({ ...p, telefone: e.target.value }))} placeholder="Ex: (00) 0000-0000" /></div>
+            </div>
+          </div>
+        )}
+      </div>
+
       <div style={{ ...S.card, marginBottom: 16, background: '#0f172a' }}>
         <div style={{ fontSize: 13, fontWeight: 600, color: '#94a3b8', marginBottom: 12 }}>Dados do Cliente</div>
         <div style={S.row('2fr 1fr')}>
