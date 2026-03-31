@@ -61,7 +61,7 @@ export function gerarHTMLRecibo(pdf, isOrcamento = false) {
   const obsSection = pdf.observacao ? `
     <div style="margin-bottom:8px;border:1px solid #000;">
       <div style="${SEC_H}">OBSERVAÇÃO</div>
-      <div style="padding:6px 8px;font-size:10px;">${pdf.observacao}</div>
+      <div style="padding:6px 8px;font-size:10px;white-space:pre-wrap;">${pdf.observacao}</div>
     </div>` : ''
 
   // Seção de garantias (DADOS ADICIONAIS)
