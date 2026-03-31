@@ -1292,7 +1292,6 @@ function FormVendaFisica({ db, refresh, onClose }) {
   const [aparelhos, setAparelhos] = useState([{ cod: '', preco: '' }])
   const [acessorios, setAcessorios] = useState([])
   const [pagamentos, setPagamentos] = useState([{ forma: '', valor: '', parcelas: 1 }])
-  const [trocas, setTrocas] = useState([])
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState('')
 
@@ -1307,14 +1306,7 @@ function FormVendaFisica({ db, refresh, onClose }) {
   function addPagamento() { setPagamentos(p => [...p, { forma: '', valor: '', parcelas: 1 }]) }
   function removePagamento(i) { setPagamentos(p => p.filter((_, idx) => idx !== i)) }
   function setPagamento(i, k, v) {
-    setPagamentos(p => p.map((x, idx) => {
-      if (idx !== i) return x
-      const updated = { ...x, [k]: v }
-      if (k === 'forma' && v === 'TROCA') {
-        setTrocas(t => [...t, { marca: '', modelo: '', capacidade: '', cor: '', codigo: '', preco: '', obs: '' }])
-      }
-      return updated
-    }))
+    setPagamentos(p => p.map((x, idx) => idx === i ? { ...x, [k]: v } : x))
   }
 
   function calcTaxa(pag) {
@@ -1410,6 +1402,36 @@ function FormVendaFisica({ db, refresh, onClose }) {
             await supabase.from('estoque_acessorios').update({ quantidade: newQtd }).eq('id', deb.id);
           }
         }
+      }
+      // Entrar aparelhos de troca no estoque
+      for (const pag of pagamentos.filter(p => p.forma === 'TROCA')) {
+        const tMarca = pag.trocaMarca || 'Outro'
+        const tModelo = pag.trocaModelo || 'Aparelho de Troca'
+        const tCapacidade = pag.trocaCapacidade || '64GB'
+        const tCor = pag.trocaCor || 'N/A'
+        const tCusto = Number(pag.trocaPreco) || 0
+        const tCondicao = pag.trocaCondicao || 'seminovo'
+        // Gerar código único para o estoque
+        let tCod = pag.trocaCod ? pag.trocaCod.toUpperCase() : ''
+        if (!tCod || (db.estoque_aparelhos || []).find(e => e.cod === tCod)) {
+          tCod = genId('TR')
+        }
+        // Inserir no catálogo se combinação marca+modelo+capacidade+cor ainda não existir
+        const jaNosCatalogo = (db.cadastro_aparelhos || []).find(e =>
+          e.marca?.toUpperCase() === tMarca.toUpperCase() &&
+          e.modelo?.toUpperCase() === tModelo.toUpperCase() &&
+          e.capacidade === tCapacidade && e.cor?.toUpperCase() === tCor.toUpperCase()
+        )
+        if (!jaNosCatalogo) {
+          const catCod = tMarca.slice(0, 2).toUpperCase() + Date.now().toString(36).toUpperCase().slice(-4)
+          await supabase.from('cadastro_aparelhos').insert({ cod: catCod, marca: tMarca, modelo: tModelo, capacidade: tCapacidade, cor: tCor })
+        }
+        // Inserir unidade no estoque
+        await supabase.from('estoque_aparelhos').insert({
+          cod: tCod, marca: tMarca, modelo: tModelo, capacidade: tCapacidade, cor: tCor,
+          custo: tCusto, data_aquisicao: dataVenda, status: 'disponivel',
+          observacao: `TROCA${tCondicao === 'seminovo' ? ' - Semi-novo' : ' - Novo'}${pag.trocaObs ? ' - ' + pag.trocaObs : ''}`
+        })
       }
       refresh()
       onClose()
@@ -1528,15 +1550,15 @@ function FormVendaFisica({ db, refresh, onClose }) {
             )}
             {pag.forma === 'TROCA' && (
               <div style={{ marginTop: 12, padding: 12, background: '#1a0505', borderRadius: 8, border: '1px dashed #991b1b' }}>
-                <div style={{ fontSize: 12, color: '#e94560', marginBottom: 10, fontWeight: 600 }}>Aparelho de Troca</div>
+                <div style={{ fontSize: 12, color: '#e94560', marginBottom: 10, fontWeight: 600 }}>📱 Aparelho de Troca — entrará no estoque automaticamente</div>
                 <div style={S.row('1fr 1fr')}>
-                  <div><label style={S.label}>Marca</label>
+                  <div><label style={S.label}>Marca *</label>
                     <select style={S.select} value={pag.trocaMarca || ''} onChange={e => setPagamento(i, 'trocaMarca', e.target.value)}>
                       <option value="">Selecione...</option>
                       {MARCAS_TROCA.map(m => <option key={m} value={m}>{m}</option>)}
                     </select>
                   </div>
-                  <div><label style={S.label}>Modelo</label><input style={S.input} value={pag.trocaModelo || ''} onChange={e => setPagamento(i, 'trocaModelo', e.target.value)} placeholder="Ex: Galaxy S23" /></div>
+                  <div><label style={S.label}>Modelo *</label><input style={S.input} value={pag.trocaModelo || ''} onChange={e => setPagamento(i, 'trocaModelo', e.target.value)} placeholder="Ex: Galaxy S23" /></div>
                 </div>
                 <div style={S.row('1fr 1fr 1fr')}>
                   <div><label style={S.label}>Capacidade</label>
@@ -1546,9 +1568,18 @@ function FormVendaFisica({ db, refresh, onClose }) {
                     </select>
                   </div>
                   <div><label style={S.label}>Cor</label><input style={S.input} value={pag.trocaCor || ''} onChange={e => setPagamento(i, 'trocaCor', e.target.value)} placeholder="Ex: Preto" /></div>
-                  <div><label style={S.label}>Valor da Troca (R$)</label><input style={S.input} type="number" step="0.01" value={pag.trocaPreco || ''} onChange={e => setPagamento(i, 'trocaPreco', e.target.value)} /></div>
+                  <div><label style={S.label}>Condição</label>
+                    <select style={S.select} value={pag.trocaCondicao || 'seminovo'} onChange={e => setPagamento(i, 'trocaCondicao', e.target.value)}>
+                      <option value="seminovo">Semi-novo</option>
+                      <option value="novo">Novo</option>
+                    </select>
+                  </div>
                 </div>
-                <div><label style={S.label}>Observação</label><input style={S.input} value={pag.trocaObs || ''} onChange={e => setPagamento(i, 'trocaObs', e.target.value)} placeholder="Estado do aparelho..." /></div>
+                <div style={S.row('1fr 1fr')}>
+                  <div><label style={S.label}>Valor da Troca / Custo (R$) *</label><input style={S.input} type="number" step="0.01" value={pag.trocaPreco || ''} onChange={e => setPagamento(i, 'trocaPreco', e.target.value)} placeholder="Valor pago na troca" /></div>
+                  <div><label style={S.label}>Código no Estoque (opcional)</label><input style={S.input} value={pag.trocaCod || ''} onChange={e => setPagamento(i, 'trocaCod', e.target.value)} placeholder="Deixe em branco para gerar automático" /></div>
+                </div>
+                <div><label style={S.label}>Observação (estado, defeitos...)</label><input style={S.input} value={pag.trocaObs || ''} onChange={e => setPagamento(i, 'trocaObs', e.target.value)} placeholder="Ex: Tela trincada, bateria boa" /></div>
               </div>
             )}
           </div>
@@ -1741,6 +1772,33 @@ function FormVendaOnline({ db, refresh, onClose }) {
           }
         }
       }
+      // Entrar aparelhos de troca no estoque
+      for (const pag of pagamentos.filter(p => p.forma === 'TROCA')) {
+        const tMarca = pag.trocaMarca || 'Outro'
+        const tModelo = pag.trocaModelo || 'Aparelho de Troca'
+        const tCapacidade = pag.trocaCapacidade || '64GB'
+        const tCor = pag.trocaCor || 'N/A'
+        const tCusto = Number(pag.trocaPreco) || 0
+        const tCondicao = pag.trocaCondicao || 'seminovo'
+        let tCod = pag.trocaCod ? pag.trocaCod.toUpperCase() : ''
+        if (!tCod || (db.estoque_aparelhos || []).find(e => e.cod === tCod)) {
+          tCod = genId('TR')
+        }
+        const jaNosCatalogo = (db.cadastro_aparelhos || []).find(e =>
+          e.marca?.toUpperCase() === tMarca.toUpperCase() &&
+          e.modelo?.toUpperCase() === tModelo.toUpperCase() &&
+          e.capacidade === tCapacidade && e.cor?.toUpperCase() === tCor.toUpperCase()
+        )
+        if (!jaNosCatalogo) {
+          const catCod = tMarca.slice(0, 2).toUpperCase() + Date.now().toString(36).toUpperCase().slice(-4)
+          await supabase.from('cadastro_aparelhos').insert({ cod: catCod, marca: tMarca, modelo: tModelo, capacidade: tCapacidade, cor: tCor })
+        }
+        await supabase.from('estoque_aparelhos').insert({
+          cod: tCod, marca: tMarca, modelo: tModelo, capacidade: tCapacidade, cor: tCor,
+          custo: tCusto, data_aquisicao: form.dataVenda, status: 'disponivel',
+          observacao: `TROCA${tCondicao === 'seminovo' ? ' - Semi-novo' : ' - Novo'}${pag.trocaObs ? ' - ' + pag.trocaObs : ''}`
+        })
+      }
 
       if (gerarPdfFlag) {
         const html = gerarHTMLRecibo(pdfData, false)
@@ -1870,11 +1928,47 @@ function FormVendaOnline({ db, refresh, onClose }) {
                   </select>
                 </div>
               )}
-              <div><label style={S.label}>Valor (R$) *</label><input style={S.input} type="number" step="0.01" value={pag.valor} onChange={e => setPag(i, 'valor', e.target.value)} /></div>
+              {pag.forma !== 'TROCA' && (
+                <div><label style={S.label}>Valor (R$) *</label><input style={S.input} type="number" step="0.01" value={pag.valor} onChange={e => setPag(i, 'valor', e.target.value)} /></div>
+              )}
             </div>
-            {pag.forma && pag.forma !== 'Dinheiro' && pag.forma !== 'PIX' && pag.valor && (
+            {pag.forma && pag.forma !== 'TROCA' && pag.forma !== 'Dinheiro' && pag.forma !== 'PIX' && pag.valor && (
               <div style={{ marginTop: 8, padding: '6px 10px', background: '#332b00', borderRadius: 6, fontSize: 12, color: '#fbbf24' }}>
                 Taxa {getTaxaPercent(pag.forma, pag.parcelas).toFixed(2)}% = {formatMoney(calcTaxa(pag))}
+              </div>
+            )}
+            {pag.forma === 'TROCA' && (
+              <div style={{ marginTop: 12, padding: 12, background: '#1a0505', borderRadius: 8, border: '1px dashed #991b1b' }}>
+                <div style={{ fontSize: 12, color: '#e94560', marginBottom: 10, fontWeight: 600 }}>📱 Aparelho de Troca — entrará no estoque automaticamente</div>
+                <div style={S.row('1fr 1fr')}>
+                  <div><label style={S.label}>Marca *</label>
+                    <select style={S.select} value={pag.trocaMarca || ''} onChange={e => setPag(i, 'trocaMarca', e.target.value)}>
+                      <option value="">Selecione...</option>
+                      {MARCAS_TROCA.map(m => <option key={m} value={m}>{m}</option>)}
+                    </select>
+                  </div>
+                  <div><label style={S.label}>Modelo *</label><input style={S.input} value={pag.trocaModelo || ''} onChange={e => setPag(i, 'trocaModelo', e.target.value)} placeholder="Ex: Galaxy S23" /></div>
+                </div>
+                <div style={S.row('1fr 1fr 1fr')}>
+                  <div><label style={S.label}>Capacidade</label>
+                    <select style={S.select} value={pag.trocaCapacidade || ''} onChange={e => setPag(i, 'trocaCapacidade', e.target.value)}>
+                      <option value="">Selecione...</option>
+                      {CAPACIDADES.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </div>
+                  <div><label style={S.label}>Cor</label><input style={S.input} value={pag.trocaCor || ''} onChange={e => setPag(i, 'trocaCor', e.target.value)} placeholder="Ex: Preto" /></div>
+                  <div><label style={S.label}>Condição</label>
+                    <select style={S.select} value={pag.trocaCondicao || 'seminovo'} onChange={e => setPag(i, 'trocaCondicao', e.target.value)}>
+                      <option value="seminovo">Semi-novo</option>
+                      <option value="novo">Novo</option>
+                    </select>
+                  </div>
+                </div>
+                <div style={S.row('1fr 1fr')}>
+                  <div><label style={S.label}>Valor da Troca / Custo (R$) *</label><input style={S.input} type="number" step="0.01" value={pag.trocaPreco || ''} onChange={e => setPag(i, 'trocaPreco', e.target.value)} placeholder="Valor pago na troca" /></div>
+                  <div><label style={S.label}>Código no Estoque (opcional)</label><input style={S.input} value={pag.trocaCod || ''} onChange={e => setPag(i, 'trocaCod', e.target.value)} placeholder="Deixe em branco para gerar automático" /></div>
+                </div>
+                <div><label style={S.label}>Observação (estado, defeitos...)</label><input style={S.input} value={pag.trocaObs || ''} onChange={e => setPag(i, 'trocaObs', e.target.value)} placeholder="Ex: Tela trincada, bateria boa" /></div>
               </div>
             )}
           </div>
