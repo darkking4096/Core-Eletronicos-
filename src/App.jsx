@@ -1896,7 +1896,10 @@ function FormVendaOnline({ db, refresh, onClose }) {
           <div style={S.formGroup}><label style={S.label}>Telefone</label><input style={S.input} value={cliente.telefone} onChange={e => setCliente(c => ({ ...c, telefone: e.target.value }))} /></div>
           <div style={S.formGroup}><label style={S.label}>E-mail</label><input style={S.input} value={cliente.email} onChange={e => setCliente(c => ({ ...c, email: e.target.value }))} /></div>
         </div>
-        <div style={S.formGroup}><label style={S.label}>Endereço</label><input style={S.input} value={cliente.endereco} onChange={e => setCliente(c => ({ ...c, endereco: e.target.value }))} /></div>
+        <div style={S.row('3fr 1fr')}>
+           <div style={S.formGroup}><label style={S.label}>Endereço</label><input style={S.input} value={cliente.endereco} onChange={e => setCliente(c => ({ ...c, endereco: e.target.value }))} /></div>
+           <div style={S.formGroup}><label style={S.label}>CEP</label><input style={S.input} value={cliente.cep} onChange={e => setCliente(c => ({ ...c, cep: e.target.value }))} /></div>
+        </div>
         <div style={S.row('2fr 1fr')}>
           <div style={S.formGroup}><label style={S.label}>Cidade</label><input style={S.input} value={cliente.cidade} onChange={e => setCliente(c => ({ ...c, cidade: e.target.value }))} /></div>
           <div style={S.formGroup}><label style={S.label}>Estado</label><input style={S.input} value={cliente.estado} onChange={e => setCliente(c => ({ ...c, estado: e.target.value }))} /></div>
@@ -2080,7 +2083,7 @@ function FormVendaOnline({ db, refresh, onClose }) {
 // ─────────────────────────────────────────────
 function FormOrcamento({ db, refresh, onClose }) {
   const [form, setForm] = useState({ dataVenda: today(), vendedor: '', observacao: '' })
-  const [cliente, setCliente] = useState({ nome: '', cpf: '', telefone: '', email: '', endereco: '', cidade: '', estado: 'GO' })
+  const [cliente, setCliente] = useState({ nome: '', cpf: '', telefone: '', email: '', endereco: '', cep: '', cidade: '', estado: 'GO' })
   const [itens, setItens] = useState([{ descricao: '', qtd: 1, preco: '', desconto: 0 }])
   const [pagamentos, setPagamentos] = useState([{ forma: '', valor: '', detalhe: '' }])
   const [loading, setLoading] = useState(false)
@@ -2169,18 +2172,20 @@ function FormOrcamento({ db, refresh, onClose }) {
         <div style={{ fontSize: 13, fontWeight: 600, color: '#94a3b8', marginBottom: 12 }}>Dados do Cliente</div>
         <div style={S.row('2fr 1fr')}>
           <div style={S.formGroup}><label style={S.label}>Nome *</label><input style={S.input} value={cliente.nome} onChange={e => setCliente(c => ({ ...c, nome: e.target.value }))} /></div>
-          <div style={S.formGroup}><label style={S.label}>Telefone</label><input style={S.input} value={cliente.telefone} onChange={e => setCliente(c => ({ ...c, telefone: e.target.value }))} /></div>
+          <div style={S.formGroup}><label style={S.label}>CPF</label><input style={S.input} value={cliente.cpf} onChange={e => setCliente(c => ({ ...c, cpf: e.target.value }))} placeholder="000.000.000-00" /></div>
         </div>
         <div style={S.row('1fr 1fr')}>
-          <div style={S.formGroup}><label style={S.label}>CPF</label><input style={S.input} value={cliente.cpf} onChange={e => setCliente(c => ({ ...c, cpf: e.target.value }))} /></div>
-          <div style={S.formGroup}><label style={S.label}>Cidade / Estado</label>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <input style={S.input} value={cliente.cidade} onChange={e => setCliente(c => ({ ...c, cidade: e.target.value }))} placeholder="Cidade" />
-              <input style={{ ...S.input, width: 60 }} value={cliente.estado} onChange={e => setCliente(c => ({ ...c, estado: e.target.value }))} />
-            </div>
-          </div>
+          <div style={S.formGroup}><label style={S.label}>Telefone</label><input style={S.input} value={cliente.telefone} onChange={e => setCliente(c => ({ ...c, telefone: e.target.value }))} /></div>
+          <div style={S.formGroup}><label style={S.label}>E-mail</label><input style={S.input} value={cliente.email} onChange={e => setCliente(c => ({ ...c, email: e.target.value }))} /></div>
         </div>
-        <div style={S.formGroup}><label style={S.label}>Endereço</label><input style={S.input} value={cliente.endereco} onChange={e => setCliente(c => ({ ...c, endereco: e.target.value }))} /></div>
+        <div style={S.row('3fr 1fr')}>
+           <div style={S.formGroup}><label style={S.label}>Endereço</label><input style={S.input} value={cliente.endereco} onChange={e => setCliente(c => ({ ...c, endereco: e.target.value }))} /></div>
+           <div style={S.formGroup}><label style={S.label}>CEP</label><input style={S.input} value={cliente.cep || ''} onChange={e => setCliente(c => ({ ...c, cep: e.target.value }))} /></div>
+        </div>
+        <div style={S.row('2fr 1fr')}>
+          <div style={S.formGroup}><label style={S.label}>Cidade</label><input style={S.input} value={cliente.cidade} onChange={e => setCliente(c => ({ ...c, cidade: e.target.value }))} /></div>
+          <div style={S.formGroup}><label style={S.label}>Estado</label><input style={S.input} value={cliente.estado} onChange={e => setCliente(c => ({ ...c, estado: e.target.value }))} /></div>
+        </div>
       </div>
 
       <div style={{ marginBottom: 16 }}>

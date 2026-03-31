@@ -9,57 +9,57 @@ export function gerarHTMLRecibo(pdf, isOrcamento = false) {
 
   // Estilos reutilizáveis
   const SEC_H = 'background:#2c2c2c;color:#fff;padding:4px 8px;font-weight:bold;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;'
-  const TH_S = 'background:#2c2c2c;color:#fff;padding:5px 6px;text-align:left;font-size:10px;border:1px solid #555;'
+  const TH_S = 'background:#2c2c2c;color:#fff;padding:5px 6px;text-align:left;font-size:10px;border:1px solid #000;'
 
   // Linhas de produtos
   const produtosRows = [...aparelhos, ...acessorios].map((p, i) => `
     <tr style="${i % 2 === 1 ? 'background:#f5f5f5;' : ''}">
-      <td style="padding:5px 6px;border:1px solid #ccc;">${p.descricao || ''}</td>
-      <td style="padding:5px 6px;border:1px solid #ccc;text-align:center;width:40px;">${p.qtd || 1}</td>
-      <td style="padding:5px 6px;border:1px solid #ccc;text-align:right;width:110px;">${p.valorUnitario || ''}</td>
-      <td style="padding:5px 6px;border:1px solid #ccc;text-align:right;width:90px;">${p.desconto || '-'}</td>
-      <td style="padding:5px 6px;border:1px solid #ccc;text-align:right;width:110px;">${p.valorTotal || ''}</td>
+      <td style="padding:5px 6px;border:1px solid #000;">${p.descricao || ''}</td>
+      <td style="padding:5px 6px;border:1px solid #000;text-align:center;width:40px;">${p.qtd || 1}</td>
+      <td style="padding:5px 6px;border:1px solid #000;text-align:right;width:110px;">${p.valorUnitario || ''}</td>
+      <td style="padding:5px 6px;border:1px solid #000;text-align:right;width:90px;">${p.desconto || '-'}</td>
+      <td style="padding:5px 6px;border:1px solid #000;text-align:right;width:110px;">${p.valorTotal || ''}</td>
     </tr>`).join('')
 
   // Linha de total da tabela de produtos
   const totalProdRow = `
     <tr style="background:#d8d8d8;font-weight:bold;">
-      <td style="padding:5px 6px;border:1px solid #ccc;">Total</td>
-      <td style="padding:5px 6px;border:1px solid #ccc;"></td>
-      <td style="padding:5px 6px;border:1px solid #ccc;text-align:right;">${pdf.totalBruto || ''}</td>
-      <td style="padding:5px 6px;border:1px solid #ccc;text-align:right;">${pdf.totalDesconto && pdf.totalDesconto !== 'R$ 0,00' ? pdf.totalDesconto : 'R$ 0,00'}</td>
-      <td style="padding:5px 6px;border:1px solid #ccc;text-align:right;">${pdf.totalVenda || ''}</td>
+      <td style="padding:5px 6px;border:1px solid #000;">Total</td>
+      <td style="padding:5px 6px;border:1px solid #000;"></td>
+      <td style="padding:5px 6px;border:1px solid #000;text-align:right;">${pdf.totalBruto || ''}</td>
+      <td style="padding:5px 6px;border:1px solid #000;text-align:right;">${pdf.totalDesconto && pdf.totalDesconto !== 'R$ 0,00' ? pdf.totalDesconto : 'R$ 0,00'}</td>
+      <td style="padding:5px 6px;border:1px solid #000;text-align:right;">${pdf.totalVenda || ''}</td>
     </tr>`
 
   // Linhas de pagamento
   const pagamentosRows = pagamentos.map((p, i) => `
     <tr style="${i % 2 === 1 ? 'background:#f5f5f5;' : ''}">
-      <td style="padding:5px 6px;border:1px solid #ccc;">${p.forma || ''}</td>
-      <td style="padding:5px 6px;border:1px solid #ccc;">${p.detalhes || ''}</td>
-      <td style="padding:5px 6px;border:1px solid #ccc;text-align:right;width:130px;">${p.valor || ''}</td>
-      <td style="padding:5px 6px;border:1px solid #ccc;text-align:center;width:80px;">${p.parcelas || ''}</td>
+      <td style="padding:5px 6px;border:1px solid #000;">${p.forma || ''}</td>
+      <td style="padding:5px 6px;border:1px solid #000;">${p.detalhes || ''}</td>
+      <td style="padding:5px 6px;border:1px solid #000;text-align:right;width:130px;">${p.valor || ''}</td>
+      <td style="padding:5px 6px;border:1px solid #000;text-align:center;width:80px;">${p.parcelas || ''}</td>
     </tr>`).join('')
 
   const totalPagRow = `
     <tr style="background:#d8d8d8;font-weight:bold;">
-      <td colspan="2" style="padding:5px 6px;border:1px solid #ccc;">Total</td>
-      <td style="padding:5px 6px;border:1px solid #ccc;text-align:right;">${pdf.totalVenda || ''}</td>
-      <td style="padding:5px 6px;border:1px solid #ccc;"></td>
+      <td colspan="2" style="padding:5px 6px;border:1px solid #000;">Total</td>
+      <td style="padding:5px 6px;border:1px solid #000;text-align:right;">${pdf.totalVenda || ''}</td>
+      <td style="padding:5px 6px;border:1px solid #000;"></td>
     </tr>`
 
   // Seção de trocas
   const trocasSection = trocas && trocas.length > 0 ? `
-    <div style="margin-bottom:8px;border:1px solid #999;">
+    <div style="margin-bottom:8px;border:1px solid #000;">
       <div style="${SEC_H}">APARELHOS RECEBIDOS EM TROCA</div>
       <table style="width:100%;border-collapse:collapse;font-size:10px;">
         <tr><th style="${TH_S}">Aparelho / Observação</th></tr>
-        ${trocas.map(t => `<tr><td style="padding:5px 6px;border:1px solid #ccc;">${t}</td></tr>`).join('')}
+        ${trocas.map(t => `<tr><td style="padding:5px 6px;border:1px solid #000;">${t}</td></tr>`).join('')}
       </table>
     </div>` : ''
 
   // Seção de observação
   const obsSection = pdf.observacao ? `
-    <div style="margin-bottom:8px;border:1px solid #999;">
+    <div style="margin-bottom:8px;border:1px solid #000;">
       <div style="${SEC_H}">OBSERVAÇÃO</div>
       <div style="padding:6px 8px;font-size:10px;">${pdf.observacao}</div>
     </div>` : ''
@@ -76,7 +76,7 @@ export function gerarHTMLRecibo(pdf, isOrcamento = false) {
         ${termos}`
     }).join('<br/>')
     dadosAdicionaisSection = `
-      <div style="margin-bottom:8px;border:1px solid #999;">
+      <div style="margin-bottom:8px;border:1px solid #000;">
         <div style="${SEC_H}">DADOS ADICIONAIS</div>
         <div style="padding:6px 8px;line-height:1.6;">${blocos}</div>
       </div>`
@@ -93,7 +93,7 @@ export function gerarHTMLRecibo(pdf, isOrcamento = false) {
   <meta charset="UTF-8">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: Arial, sans-serif; font-size: 11px; color: #000; background: #fff; }
+    body { font-family: Arial, sans-serif; font-size: 11px; color: #000; background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .page { width: 794px; margin: 0 auto; padding: 20px 25px; }
     @media print {
       body { background: #fff !important; }
@@ -129,7 +129,7 @@ export function gerarHTMLRecibo(pdf, isOrcamento = false) {
   </table>
 
   <!-- DESTINATÁRIO/REMETENTE -->
-  <div style="margin-bottom:8px;border:1px solid #999;">
+  <div style="margin-bottom:8px;border:1px solid #000;">
     <div style="${SEC_H}">DESTINATÁRIO/REMETENTE</div>
     <table style="width:100%;border-collapse:collapse;font-size:10px;">
       <tr>
@@ -139,10 +139,10 @@ export function gerarHTMLRecibo(pdf, isOrcamento = false) {
         <th style="${TH_S};width:30%">E-mail</th>
       </tr>
       <tr>
-        <td style="padding:5px 6px;border:1px solid #ccc;">${cliente.nome || ''}</td>
-        <td style="padding:5px 6px;border:1px solid #ccc;">${cliente.telefone || ''}</td>
-        <td style="padding:5px 6px;border:1px solid #ccc;">${cliente.cpf || ''}</td>
-        <td style="padding:5px 6px;border:1px solid #ccc;">${cliente.email || ''}</td>
+        <td style="padding:5px 6px;border:1px solid #000;">${cliente.nome || ''}</td>
+        <td style="padding:5px 6px;border:1px solid #000;">${cliente.telefone || ''}</td>
+        <td style="padding:5px 6px;border:1px solid #000;">${cliente.cpf || ''}</td>
+        <td style="padding:5px 6px;border:1px solid #000;">${cliente.email || ''}</td>
       </tr>
       <tr>
         <th style="${TH_S};width:40%">Endereço</th>
@@ -151,16 +151,16 @@ export function gerarHTMLRecibo(pdf, isOrcamento = false) {
         <th style="${TH_S};width:20%">Estado</th>
       </tr>
       <tr>
-        <td style="padding:5px 6px;border:1px solid #ccc;">${cliente.endereco || ''}</td>
-        <td style="padding:5px 6px;border:1px solid #ccc;">${cliente.cep || ''}</td>
-        <td style="padding:5px 6px;border:1px solid #ccc;">${cliente.cidade || ''}</td>
-        <td style="padding:5px 6px;border:1px solid #ccc;">${cliente.estado || 'GO'}</td>
+        <td style="padding:5px 6px;border:1px solid #000;">${cliente.endereco || ''}</td>
+        <td style="padding:5px 6px;border:1px solid #000;">${cliente.cep || ''}</td>
+        <td style="padding:5px 6px;border:1px solid #000;">${cliente.cidade || ''}</td>
+        <td style="padding:5px 6px;border:1px solid #000;">${cliente.estado || 'GO'}</td>
       </tr>
     </table>
   </div>
 
   <!-- DADOS DO PRODUTO -->
-  <div style="margin-bottom:8px;border:1px solid #999;">
+  <div style="margin-bottom:8px;border:1px solid #000;">
     <div style="${SEC_H}">DADOS DO PRODUTO</div>
     <table style="width:100%;border-collapse:collapse;font-size:10px;">
       <tr>
@@ -176,7 +176,7 @@ export function gerarHTMLRecibo(pdf, isOrcamento = false) {
   </div>
 
   <!-- PAGAMENTO -->
-  <div style="margin-bottom:8px;border:1px solid #999;">
+  <div style="margin-bottom:8px;border:1px solid #000;">
     <div style="${SEC_H}">PAGAMENTO</div>
     <table style="width:100%;border-collapse:collapse;font-size:10px;">
       <tr>
