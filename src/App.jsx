@@ -5,6 +5,28 @@ import { TIPOS_CUSTO, CATEGORIAS_CUSTO, TIPOS_ACESSORIO, FORMAS_PAGAMENTO, MARCA
 import { obterGarantia, calcGarantiaDate } from './utils/garantias.js'
 import { gerarHTMLRecibo, gerarPDF } from './utils/pdfTemplates.js'
 
+export function useSessionState(key, initialValue) {
+  const [state, setState] = useState(() => {
+    try {
+      const item = window.sessionStorage.getItem(key);
+      return item ? JSON.parse(item) : (typeof initialValue === 'function' ? initialValue() : initialValue);
+    } catch (e) {
+      return typeof initialValue === 'function' ? initialValue() : initialValue;
+    }
+  });
+
+  useEffect(() => {
+    try { window.sessionStorage.setItem(key, JSON.stringify(state)); } catch (e) {}
+  }, [key, state]);
+
+  const clearState = useCallback(() => {
+    try { window.sessionStorage.removeItem(key); } catch (e) {}
+    setState(typeof initialValue === 'function' ? initialValue() : initialValue);
+  }, [key, initialValue]);
+
+  return [state, setState, clearState];
+}
+
 // ─────────────────────────────────────────────
 // ESTILOS GLOBAIS
 // ─────────────────────────────────────────────
@@ -422,7 +444,7 @@ function EstoqueAparelhos({ db, refresh }) {
   const [tab, setTab] = useState('cadastro')
   const [modalOpen, setModalOpen] = useState(false)
   const [editItem, setEditItem] = useState(null)
-  const [form, setForm] = useState({})
+  const [form, setForm, clearForm] = useSessionState('draft_estoque_aparelho', {})
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState('')
   const [confirmItem, setConfirmItem] = useState(null)
@@ -431,12 +453,16 @@ function EstoqueAparelhos({ db, refresh }) {
 
   function openModal(item = null) {
     setEditItem(item)
-    setForm(item ? { ...item } : { cod: '', marca: '', modelo: '', capacidade: '', cor: '', custo: '', data_aquisicao: today() })
+    if (item) {
+      setForm({ ...item })
+    } else {
+      setForm(f => Object.keys(f).length > 2 ? f : { cod: '', marca: '', modelo: '', capacidade: '', cor: '', custo: '', data_aquisicao: today() })
+    }
     setModalOpen(true)
     setMsg('')
   }
 
-  async function salvar() {
+  async function salvar(continuar = false) {
     // Para cadastro, código é obrigatório. Para estoque, é opcional (gerado automaticamente)
     if (tab === 'cadastro' && (!form.cod || !form.marca || !form.modelo || !form.capacidade || !form.cor)) {
       setMsg('Preencha todos os campos obrigatórios')
@@ -490,8 +516,14 @@ function EstoqueAparelhos({ db, refresh }) {
           await supabase.from('estoque_aparelhos').insert(data)
         }
       }
-      setModalOpen(false)
       refresh()
+      clearForm()
+      if (continuar) {
+        setMsg('Salvo com sucesso! Prossiga com o próximo.')
+        setTimeout(() => setMsg(''), 3000)
+      } else {
+        setModalOpen(false)
+      }
     } catch (e) { setMsg('Erro: ' + e.message) }
     setLoading(false)
   }
@@ -632,9 +664,10 @@ function EstoqueAparelhos({ db, refresh }) {
           </div>
         )}
         {msg && <div style={{ color: '#f87171', fontSize: 13, marginBottom: 12 }}>{msg}</div>}
-        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-          <button style={S.btn('ghost')} onClick={() => setModalOpen(false)}>Cancelar</button>
-          <button style={S.btn()} onClick={salvar} disabled={loading}>{loading ? 'Salvando...' : 'Salvar'}</button>
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 8 }}>
+          <button style={S.btn('ghost')} onClick={() => setModalOpen(false)}>Esconder Aba(Cancelar)</button>
+          <button style={{ ...S.btn(), background: '#1d4ed8' }} onClick={() => salvar(true)} disabled={loading}>{loading ? 'Salvando...' : 'Salvar e Adicionar Próximo'}</button>
+          <button style={S.btn()} onClick={() => salvar(false)} disabled={loading}>{loading ? 'Salvando...' : 'Salvar e Fechar'}</button>
         </div>
       </Modal>
       <ConfirmModal open={!!confirmItem} msg={`Excluir ${confirmItem?.cod}?`} onConfirm={() => doExcluir(confirmItem)} onCancel={() => setConfirmItem(null)} />
@@ -665,7 +698,7 @@ function EstoqueAcessorios({ db, refresh }) {
   const [tab, setTab] = useState('cadastro')
   const [modalOpen, setModalOpen] = useState(false)
   const [editItem, setEditItem] = useState(null)
-  const [form, setForm] = useState({})
+  const [form, setForm, clearForm] = useSessionState('draft_estoque_acessorios', {})
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState('')
   const [confirmItem, setConfirmItem] = useState(null)
@@ -675,12 +708,16 @@ function EstoqueAcessorios({ db, refresh }) {
 
   function openModal(item = null) {
     setEditItem(item)
-    setForm(item ? { ...item } : { cod: '', tipo: '', descricao: '', quantidade: 1, custo_unitario: '', data_aquisicao: today(), tipoEntrada: 'novo' })
+    if (item) {
+      setForm({ ...item })
+    } else {
+      setForm(f => Object.keys(f).length > 2 ? f : { cod: '', tipo: '', descricao: '', quantidade: 1, custo_unitario: '', data_aquisicao: today(), tipoEntrada: 'novo' })
+    }
     setModalOpen(true)
     setMsg('')
   }
 
-  async function salvar() {
+  async function salvar(continuar = false) {
     setLoading(true)
     try {
       if (tab === 'cadastro') {
@@ -720,8 +757,14 @@ function EstoqueAcessorios({ db, refresh }) {
         if (editItem) await supabase.from('estoque_acessorios').update(data).eq('id', editItem.id)
         else await supabase.from('estoque_acessorios').insert(data)
       }
-      setModalOpen(false)
       refresh()
+      clearForm()
+      if (continuar) {
+        setMsg('Salvo com sucesso! Prossiga com o próximo.')
+        setTimeout(() => setMsg(''), 3000)
+      } else {
+        setModalOpen(false)
+      }
     } catch (e) { setMsg('Erro: ' + e.message) }
     setLoading(false)
   }
@@ -853,9 +896,10 @@ function EstoqueAcessorios({ db, refresh }) {
           </div>
         )}
         {msg && <div style={{ color: '#f87171', fontSize: 13, marginBottom: 12 }}>{msg}</div>}
-        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-          <button style={S.btn('ghost')} onClick={() => setModalOpen(false)}>Cancelar</button>
-          <button style={S.btn()} onClick={salvar} disabled={loading}>{loading ? 'Salvando...' : 'Salvar'}</button>
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 8 }}>
+          <button style={S.btn('ghost')} onClick={() => setModalOpen(false)}>Esconder Aba(Cancelar)</button>
+          <button style={{ ...S.btn(), background: '#1d4ed8' }} onClick={() => salvar(true)} disabled={loading}>{loading ? 'Salvando...' : 'Salvar e Adicionar Próximo'}</button>
+          <button style={S.btn()} onClick={() => salvar(false)} disabled={loading}>{loading ? 'Salvando...' : 'Salvar e Fechar'}</button>
         </div>
       </Modal>
       <ConfirmModal open={!!confirmItem} msg={`Excluir ${confirmItem?.cod}?`} onConfirm={() => doExcluir(confirmItem)} onCancel={() => setConfirmItem(null)} />
@@ -896,21 +940,26 @@ function EstoqueAcessorios({ db, refresh }) {
 function Custos({ db, refresh }) {
   const [filter, setFilter] = useState({ start: daysAgo(30), end: today(), label: '30 dias' })
   const [modalOpen, setModalOpen] = useState(false)
-  const [form, setForm] = useState({ data: today(), tipo: '', categoria: '', valor: '', observacao: '' })
+  const [form, setForm, clearForm] = useSessionState('draft_custos', { data: today(), tipo: '', categoria: '', valor: '', observacao: '' })
   const [confirmItem, setConfirmItem] = useState(null)
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState('')
 
   const filtered = (db.custos || []).filter(c => c.data >= filter.start && c.data <= filter.end)
 
-  async function salvar() {
+  async function salvar(continuar = false) {
     if (!form.data || !form.tipo || !form.categoria || !form.valor) { setMsg('Preencha todos os campos obrigatórios'); return }
     setLoading(true)
     try {
       await supabase.from('custos').insert({ data: form.data, tipo: form.tipo, categoria: form.categoria, valor: Number(form.valor), observacao: form.observacao || null })
-      setModalOpen(false)
-      setForm({ data: today(), tipo: '', categoria: '', valor: '', observacao: '' })
       refresh()
+      clearForm()
+      if (continuar) {
+        setMsg('Salvo com sucesso! Prossiga com o próximo.')
+        setTimeout(() => setMsg(''), 3000)
+      } else {
+        setModalOpen(false)
+      }
     } catch (e) { setMsg('Erro: ' + e.message) }
     setLoading(false)
   }
@@ -982,9 +1031,10 @@ function Custos({ db, refresh }) {
           <textarea style={{ ...S.input, minHeight: 80, resize: 'vertical' }} value={form.observacao} onChange={e => setForm(f => ({ ...f, observacao: e.target.value }))} placeholder="Detalhes adicionais..." />
         </div>
         {msg && <div style={{ color: '#f87171', fontSize: 13, marginBottom: 12 }}>{msg}</div>}
-        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-          <button style={S.btn('ghost')} onClick={() => setModalOpen(false)}>Cancelar</button>
-          <button style={S.btn()} onClick={salvar} disabled={loading}>{loading ? 'Salvando...' : 'Registrar'}</button>
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 8 }}>
+          <button style={S.btn('ghost')} onClick={() => setModalOpen(false)}>Esconder Aba(Cancelar)</button>
+          <button style={{ ...S.btn(), background: '#1d4ed8' }} onClick={() => salvar(true)} disabled={loading}>{loading ? 'Salvando...' : 'Registrar e Adicionar Próximo'}</button>
+          <button style={S.btn()} onClick={() => salvar(false)} disabled={loading}>{loading ? 'Salvando...' : 'Registrar e Fechar'}</button>
         </div>
       </Modal>
       <ConfirmModal open={!!confirmItem} msg="Excluir este custo?" onConfirm={() => doExcluir(confirmItem)} onCancel={() => setConfirmItem(null)} />
@@ -1288,12 +1338,14 @@ function Vendas({ db, refresh }) {
 // FORMULÁRIO: VENDA FÍSICA
 // ─────────────────────────────────────────────
 function FormVendaFisica({ db, refresh, onClose }) {
-  const [dataVenda, setDataVenda] = useState(today())
-  const [aparelhos, setAparelhos] = useState([{ cod: '', preco: '' }])
-  const [acessorios, setAcessorios] = useState([])
-  const [pagamentos, setPagamentos] = useState([{ forma: '', valor: '', parcelas: 1 }])
+  const [dataVenda, setDataVenda, clearDataVO] = useSessionState('draft_vf_data', today())
+  const [aparelhos, setAparelhos, clearAparelhosVO] = useSessionState('draft_vf_apa', [{ cod: '', preco: '' }])
+  const [acessorios, setAcessorios, clearAcessoriosVO] = useSessionState('draft_vf_ace', [])
+  const [pagamentos, setPagamentos, clearPagamentosVO] = useSessionState('draft_vf_pag', [{ forma: '', valor: '', parcelas: 1 }])
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState('')
+
+  function baseClearFisica() { clearDataVO(); clearAparelhosVO(); clearAcessoriosVO(); clearPagamentosVO(); setMsg(''); }
 
   function addAparelho() { setAparelhos(a => [...a, { cod: '', preco: '' }]) }
   function removeAparelho(i) { setAparelhos(a => a.filter((_, idx) => idx !== i)) }
@@ -1320,7 +1372,7 @@ function FormVendaFisica({ db, refresh, onClose }) {
   const totalTaxas = pagamentos.reduce((s, p) => s + calcTaxa(p), 0)
   const totalPago = pagamentos.filter(p => p.forma !== 'TROCA').reduce((s, p) => s + (Number(p.valor) || 0), 0)
 
-  async function salvar() {
+  async function salvar(continuar = false) {
     if (!dataVenda) { setMsg('Informe a data'); return }
     if (aparelhos.filter(a => a.cod).length === 0) { setMsg('Informe pelo menos um aparelho'); return }
     if (pagamentos.filter(p => p.forma).length === 0) { setMsg('Informe pelo menos um pagamento'); return }
@@ -1462,7 +1514,13 @@ function FormVendaFisica({ db, refresh, onClose }) {
         })
       }
       refresh()
-      onClose()
+      baseClearFisica()
+      if (continuar) {
+        setMsg('Registrado com sucesso! Prossiga com a próxima venda.')
+        setTimeout(() => setMsg(''), 3000)
+      } else {
+        onClose()
+      }
     } catch (e) { setMsg('Erro: ' + e.message) }
     setLoading(false)
   }
@@ -1638,9 +1696,10 @@ function FormVendaFisica({ db, refresh, onClose }) {
       </div>
 
       {msg && <div style={{ color: '#f87171', fontSize: 13, marginBottom: 12 }}>{msg}</div>}
-      <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-        <button style={S.btn('ghost')} onClick={onClose}>Cancelar</button>
-        <button style={S.btn()} onClick={salvar} disabled={loading}>{loading ? 'Registrando...' : 'Registrar Venda'}</button>
+      <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 8 }}>
+        <button style={S.btn('ghost')} onClick={onClose}>Esconder Aba(Cancelar)</button>
+        <button style={{ ...S.btn(), background: '#1d4ed8' }} onClick={() => salvar(true)} disabled={loading}>{loading ? 'Registrando...' : 'Registrar Venda e Iniciar Nova'}</button>
+        <button style={S.btn()} onClick={() => salvar(false)} disabled={loading}>{loading ? 'Registrando...' : 'Registrar Venda e Fechar'}</button>
       </div>
     </div>
   )
@@ -1650,13 +1709,15 @@ function FormVendaFisica({ db, refresh, onClose }) {
 // FORMULÁRIO: VENDA ONLINE (com PDF)
 // ─────────────────────────────────────────────
 function FormVendaOnline({ db, refresh, onClose }) {
-  const [form, setForm] = useState({ dataVenda: today(), vendedor: '', observacao: '' })
-  const [cliente, setCliente] = useState({ nome: '', cpf: '', telefone: '', email: '', endereco: '', cep: '', cidade: '', estado: 'GO' })
-  const [aparelhos, setAparelhos] = useState([{ cod: '', preco: '', condicao: 'novo', imei: '' }])
-  const [acessorios, setAcessorios] = useState([])
-  const [pagamentos, setPagamentos] = useState([{ forma: '', valor: '', parcelas: 1 }])
+  const [form, setForm, clearFormVO] = useSessionState('draft_vo_form', { dataVenda: today(), vendedor: '', observacao: '' })
+  const [cliente, setCliente, clearCliVO] = useSessionState('draft_vo_cli', { nome: '', cpf: '', telefone: '', email: '', endereco: '', cep: '', cidade: '', estado: 'GO' })
+  const [aparelhos, setAparelhos, clearApaVO] = useSessionState('draft_vo_apa', [{ cod: '', preco: '', condicao: 'novo', imei: '' }])
+  const [acessorios, setAcessorios, clearAceVO] = useSessionState('draft_vo_ace', [])
+  const [pagamentos, setPagamentos, clearPagVO] = useSessionState('draft_vo_pag', [{ forma: '', valor: '', parcelas: 1 }])
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState('')
+
+  function baseClearOnline() { clearFormVO(); clearCliVO(); clearApaVO(); clearAceVO(); clearPagVO(); setMsg(''); }
 
   function addAparelho() { setAparelhos(a => [...a, { cod: '', preco: '', condicao: 'novo', imei: '' }]) }
   function removeAparelho(i) { setAparelhos(a => a.filter((_, idx) => idx !== i)) }
@@ -1679,7 +1740,7 @@ function FormVendaOnline({ db, refresh, onClose }) {
     + acessorios.filter(a => a.tipo === 'venda').reduce((s, a) => s + (Number(a.preco) * Number(a.qtd) || 0), 0)
   const totalTaxas = pagamentos.reduce((s, p) => s + calcTaxa(p), 0)
 
-  async function salvarERgerarPDF(gerarPdfFlag = true) {
+  async function salvarERgerarPDF(gerarPdfFlag = true, continuar = false) {
     if (!form.dataVenda || !cliente.nome) { setMsg('Data e nome do cliente são obrigatórios'); return }
     const aparelhosPreenchidos = aparelhos.filter(a => a.cod).length;
     const acessoriosPreenchidos = acessorios.filter(a => a.cod || a.descricao).length;
@@ -1903,7 +1964,13 @@ function FormVendaOnline({ db, refresh, onClose }) {
       }
 
       refresh()
-      onClose()
+      baseClearOnline()
+      if (continuar) {
+        setMsg('Registrado com sucesso! Prossiga com a próxima venda.')
+        setTimeout(() => setMsg(''), 3000)
+      } else {
+        onClose()
+      }
     } catch (e) { setMsg('Erro: ' + e.message) }
     setLoading(false)
   }
@@ -2104,10 +2171,12 @@ function FormVendaOnline({ db, refresh, onClose }) {
       </div>
 
       {msg && <div style={{ color: '#f87171', fontSize: 13, marginBottom: 12 }}>{msg}</div>}
-      <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-        <button style={S.btn('ghost')} onClick={onClose}>Cancelar</button>
-        <button style={{ ...S.btn(), background: '#1d4ed8' }} onClick={() => salvarERgerarPDF(false)} disabled={loading}>Salvar sem PDF</button>
-        <button style={S.btn()} onClick={() => salvarERgerarPDF(true)} disabled={loading}>{loading ? 'Processando...' : '📄 Salvar e Gerar PDF'}</button>
+      <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 8 }}>
+        <button style={S.btn('ghost')} onClick={onClose}>Esconder Aba(Cancelar)</button>
+        <button style={{ ...S.btn('ghost'), border: '1px solid #1d4ed8', color: '#60a5fa' }} onClick={() => salvarERgerarPDF(false, true)} disabled={loading}>Salvar s/ PDF (Novo)</button>
+        <button style={{ ...S.btn(), background: '#1d4ed8' }} onClick={() => salvarERgerarPDF(true, true)} disabled={loading}>{loading ? 'Processando...' : '📄 PDF e Add Próximo'}</button>
+        <button style={{ ...S.btn('ghost'), border: '1px solid #334155' }} onClick={() => salvarERgerarPDF(false, false)} disabled={loading}>Salvar s/ PDF e Fechar</button>
+        <button style={S.btn()} onClick={() => salvarERgerarPDF(true, false)} disabled={loading}>{loading ? 'Processando...' : '📄 PDF e Fechar'}</button>
       </div>
     </div>
   )
@@ -2117,12 +2186,14 @@ function FormVendaOnline({ db, refresh, onClose }) {
 // FORMULÁRIO: ORÇAMENTO (com PDF)
 // ─────────────────────────────────────────────
 function FormOrcamento({ db, refresh, onClose }) {
-  const [form, setForm] = useState({ dataVenda: today(), vendedor: '', observacao: '' })
-  const [cliente, setCliente] = useState({ nome: '', cpf: '', telefone: '', email: '', endereco: '', cep: '', cidade: '', estado: 'GO' })
-  const [itens, setItens] = useState([{ descricao: '', qtd: 1, preco: '', desconto: 0 }])
-  const [pagamentos, setPagamentos] = useState([{ forma: '', valor: '', detalhe: '' }])
+  const [form, setForm, clearFormORC] = useSessionState('draft_orc_form', { dataVenda: today(), vendedor: '', observacao: '' })
+  const [cliente, setCliente, clearCliORC] = useSessionState('draft_orc_cli', { nome: '', cpf: '', telefone: '', email: '', endereco: '', cep: '', cidade: '', estado: 'GO' })
+  const [itens, setItens, clearItensORC] = useSessionState('draft_orc_ite', [{ descricao: '', qtd: 1, preco: '', desconto: 0 }])
+  const [pagamentos, setPagamentos, clearPagORC] = useSessionState('draft_orc_pag', [{ forma: '', valor: '', detalhe: '' }])
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState('')
+  
+  function baseClearOrcamento() { clearFormORC(); clearCliORC(); clearItensORC(); clearPagORC(); setMsg(''); }
   const [empresaPersonalizada, setEmpresaPersonalizada] = useState({
     ativo: false,
     logoHtml: '',
@@ -2152,7 +2223,7 @@ function FormOrcamento({ db, refresh, onClose }) {
 
   const totalBruto = itens.reduce((s, it) => s + ((Number(it.preco) * Number(it.qtd)) - Number(it.desconto || 0)), 0)
 
-  async function salvarEGerarPDF(gerarPdfFlag = true) {
+  async function salvarEGerarPDF(gerarPdfFlag = true, continuar = false) {
     if (!form.dataVenda || !cliente.nome) { setMsg('Data e nome são obrigatórios'); return }
     if (itens.filter(it => it.descricao).length === 0) { setMsg('Informe pelo menos um item'); return }
     setLoading(true)
@@ -2212,7 +2283,13 @@ function FormOrcamento({ db, refresh, onClose }) {
       }
 
       refresh()
-      onClose()
+      baseClearOrcamento()
+      if (continuar) {
+        setMsg('Registrado com sucesso! Prossiga com o próximo orçamento.')
+        setTimeout(() => setMsg(''), 3000)
+      } else {
+        onClose()
+      }
     } catch (e) { setMsg('Erro: ' + e.message) }
     setLoading(false)
   }
