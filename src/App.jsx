@@ -1328,10 +1328,24 @@ function FormVendaFisica({ db, refresh, onClose }) {
     try {
       // Calcular custo dos aparelhos do estoque
       let custoAparelhos = 0
-      const codigos = aparelhos.filter(a => a.cod).map(a => a.cod.toUpperCase())
-      for (const cod of codigos) {
-        const item = (db.estoque_aparelhos || []).find(e => e.cod === cod)
-        if (item) custoAparelhos += Number(item.custo) || 0
+      const codigos = []
+      for (const ap of aparelhos) {
+        if (!ap.cod) continue;
+        let cod = ap.cod.toUpperCase();
+        let item = (db.estoque_aparelhos || []).find(e => e.cod === cod);
+        
+        // Autopreencher com a instância mais antiga se o usuário digitou o código base do catálogo
+        if (!item) {
+          const disp = (db.estoque_aparelhos || []).filter(e => e.cod.startsWith(cod + '-')).sort((a,b) => new Date(a.data_aquisicao) - new Date(b.data_aquisicao));
+          if (disp.length > 0) {
+            item = disp[0];
+            cod = item.cod;
+            ap.cod = cod;
+          }
+        }
+        
+        if (item) custoAparelhos += Number(item.custo) || 0;
+        codigos.push(cod);
       }
 
       // Calcular custo real dos acessórios (FIFO) e separar para baixa
@@ -1359,7 +1373,9 @@ function FormVendaFisica({ db, refresh, onClose }) {
 
       const aparelhosDesc = aparelhos.filter(a => a.cod).map(a => {
         const item = (db.estoque_aparelhos || []).find(e => e.cod === a.cod.toUpperCase())
-        return item ? `${item.marca} ${item.modelo} ${item.capacidade} ${item.cor}` : a.cod
+        if (item) return `${item.marca} ${item.modelo} ${item.capacidade} ${item.cor}`
+        const cat = (db.cadastro_aparelhos || []).find(c => c.cod === a.cod.toUpperCase())
+        return cat ? `${cat.marca} ${cat.modelo} ${cat.capacidade} ${cat.cor}` : a.cod
       }).join(' | ')
 
       const acessoriosDesc = acessorios.filter(a => a.cod).map(a => `${a.qtd}x ${a.cod}`).join(' | ')
@@ -1671,19 +1687,38 @@ function FormVendaOnline({ db, refresh, onClose }) {
     setLoading(true)
     try {
       let custoAparelhos = 0
-      const codigos = aparelhos.filter(a => a.cod).map(a => a.cod.toUpperCase())
+      const codigos = []
       const aparelhosPDF = []
       const garantias = []
 
-      for (const ap of aparelhos.filter(a => a.cod)) {
-        const cod = ap.cod.toUpperCase()
-        const estoqueItem = (db.estoque_aparelhos || []).find(e => e.cod === cod)
+      for (const ap of aparelhos) {
+        if (!ap.cod) continue;
+        let cod = ap.cod.toUpperCase()
+        let estoqueItem = (db.estoque_aparelhos || []).find(e => e.cod === cod)
+        
+        // Autopreencher com a instância mais antiga se o usuário digitou apenas o código base
+        if (!estoqueItem) {
+          const disp = (db.estoque_aparelhos || []).filter(e => e.cod.startsWith(cod + '-')).sort((a,b) => new Date(a.data_aquisicao) - new Date(b.data_aquisicao));
+          if (disp.length > 0) {
+            estoqueItem = disp[0];
+            cod = estoqueItem.cod;
+            ap.cod = cod;
+          }
+        }
+        
+        let catItem = null;
+        if (!estoqueItem) {
+          catItem = (db.cadastro_aparelhos || []).find(c => c.cod === cod)
+        }
+        
         const custo = estoqueItem ? Number(estoqueItem.custo) : 0
         custoAparelhos += custo
-        const marca = estoqueItem?.marca || ''
-        const modelo = estoqueItem?.modelo || ap.descricao || cod
-        const capacidade = estoqueItem?.capacidade || ''
-        const cor = estoqueItem?.cor || ''
+        codigos.push(cod)
+
+        const marca = estoqueItem?.marca || catItem?.marca || ''
+        const modelo = estoqueItem?.modelo || catItem?.modelo || ap.descricao || cod
+        const capacidade = estoqueItem?.capacidade || catItem?.capacidade || ''
+        const cor = estoqueItem?.cor || catItem?.cor || ''
         const garantia = obterGarantia(marca, modelo, ap.condicao)
         const garantiaDate = calcGarantiaDate(form.dataVenda, garantia.dias)
         const condicaoStr = ap.condicao === 'seminovo' ? 'SEMI-NOVO' : 'NOVO'
