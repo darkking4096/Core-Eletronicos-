@@ -2569,7 +2569,6 @@ export default function App() {
   const [loadingDb, setLoadingDb] = useState(true)
 
   const loadAll = useCallback(async () => {
-    setLoadingDb(true)
     try {
       const [v, c, ca, ea, cac, eac] = await Promise.all([
         supabase.from('vendas').select('*').order('data_venda', { ascending: false }),
@@ -2588,10 +2587,11 @@ export default function App() {
         estoque_acessorios: eac.data || [],
       })
     } catch (e) { console.error('Erro ao carregar dados:', e) }
-    setLoadingDb(false)
   }, [])
 
-  useEffect(() => { loadAll() }, [loadAll])
+  useEffect(() => { 
+    loadAll().then(() => setLoadingDb(false))
+  }, [loadAll])
 
   // Agrupar nav
   const groups = [...new Set(NAV.map(n => n.group))]
