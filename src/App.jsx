@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { supabase } from './lib/supabase.js'h
+import { supabase } from './lib/supabase.js'
 import { formatMoney, parseMoney, formatDate, today, daysAgo, genId } from './utils/formatters.js'
 import { TIPOS_CUSTO, CATEGORIAS_CUSTO, TIPOS_ACESSORIO, FORMAS_PAGAMENTO, MARCAS_TROCA, CAPACIDADES, MARCAS_APARELHO, TIPO_VENDA, getTaxaPercent } from './utils/constants.js'
 import { obterGarantia, calcGarantiaDate } from './utils/garantias.js'
