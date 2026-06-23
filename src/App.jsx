@@ -138,6 +138,45 @@ const S = {
 // ─────────────────────────────────────────────
 // COMPONENTES UTILITÁRIOS
 // ─────────────────────────────────────────────
+// ─────────────────────────────────────────────
+// ÍCONES (SVG estilo feather, stroke = currentColor)
+// ─────────────────────────────────────────────
+const ICONS = {
+  grid: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/>',
+  smartphone: '<rect x="5" y="2" width="14" height="20" rx="2.5"/><line x1="12" y1="18" x2="12.01" y2="18"/>',
+  headphones: '<path d="M3 14v-2a9 9 0 0 1 18 0v2"/><path d="M21 16a2 2 0 0 1-2 2h-1v-6h1a2 2 0 0 1 2 2z"/><path d="M3 16a2 2 0 0 0 2 2h1v-6H5a2 2 0 0 0-2 2z"/>',
+  cart: '<circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/>',
+  trendingDown: '<polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/>',
+  settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.81 1.17V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 8 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 14H4.5a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 6 8.6a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 11 4.6h.09A1.65 1.65 0 0 0 12 3.09V3a2 2 0 1 1 4 0v.09A1.65 1.65 0 0 0 17 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9h.09a2 2 0 1 1 0 4z"/>',
+  sun: '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>',
+  moon: '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>',
+  menu: '<line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>',
+  trash: '<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>',
+  file: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/>',
+  gift: '<polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>',
+  tag: '<path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>',
+  alertTriangle: '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
+  alertOctagon: '<polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>',
+  checkCircle: '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>',
+  xCircle: '<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>',
+  loader: '<line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/>',
+}
+
+function Icon({ name, size = 18, stroke = 1.9, style }) {
+  const path = ICONS[name]
+  if (!path) return null
+  return (
+    <svg
+      width={size} height={size} viewBox="0 0 24 24"
+      fill="none" stroke="currentColor" strokeWidth={stroke}
+      strokeLinecap="round" strokeLinejoin="round"
+      style={{ flex: 'none', display: 'inline-block', verticalAlign: 'middle', ...style }}
+      aria-hidden="true"
+      dangerouslySetInnerHTML={{ __html: path }}
+    />
+  )
+}
+
 function Modal({ open, onClose, title, children, wide }) {
   if (!open) return null
   return (
@@ -158,7 +197,7 @@ function ConfirmModal({ open, msg, onConfirm, onCancel }) {
   return (
     <div style={S.modal}>
       <div style={{ ...S.modalBox, maxWidth: 380, textAlign: 'center' }}>
-        <div style={{ fontSize: 36, marginBottom: 12 }}>⚠️</div>
+        <div style={{ color: 'var(--danger)', marginBottom: 12, display: 'flex', justifyContent: 'center' }}><Icon name="alertTriangle" size={36} stroke={1.8} /></div>
         <div style={{ fontSize: 16, color: 'var(--txt)', fontWeight: 600, marginBottom: 8 }}>Confirmar exclusão</div>
         <div style={{ fontSize: 14, color: 'var(--mut)', marginBottom: 24 }}>{msg}</div>
         <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
@@ -177,7 +216,7 @@ function ResetModal({ open, title, msg, onConfirm, onCancel }) {
   return (
     <div style={S.modal}>
       <div style={{ ...S.modalBox, maxWidth: 440, textAlign: 'center' }}>
-        <div style={{ fontSize: 44, marginBottom: 12 }}>🚨</div>
+        <div style={{ color: 'var(--danger)', marginBottom: 12, display: 'flex', justifyContent: 'center' }}><Icon name="alertOctagon" size={44} stroke={1.7} /></div>
         <div style={{ fontSize: 17, color: 'var(--danger)', fontWeight: 700, marginBottom: 8 }}>{title}</div>
         <div style={{ fontSize: 14, color: 'var(--mut)', marginBottom: 20 }}>{msg}</div>
         <div style={{ marginBottom: 20, textAlign: 'left' }}>
@@ -211,12 +250,12 @@ function BulkDeleteModal({ open, title, count, onConfirm, onCancel, children }) 
   return (
     <div style={S.modal}>
       <div style={{ ...S.modalBox, maxWidth: 480 }}>
-        <div style={{ fontSize: 36, marginBottom: 10, textAlign: 'center' }}>🗑️</div>
+        <div style={{ color: 'var(--danger)', marginBottom: 10, display: 'flex', justifyContent: 'center' }}><Icon name="trash" size={34} stroke={1.8} /></div>
         <div style={{ fontSize: 17, color: 'var(--danger)', fontWeight: 700, marginBottom: 16, textAlign: 'center' }}>{title}</div>
         {children}
         <div style={{ background: 'var(--bg)', borderRadius: 8, padding: '10px 16px', marginBottom: 16, textAlign: 'center' }}>
           <span style={{ color: count > 0 ? 'var(--danger)' : 'var(--mut-2)', fontWeight: 700, fontSize: 14 }}>
-            {count > 0 ? `⚠️ ${count} registro(s) serão excluídos permanentemente` : '— Nenhum registro encontrado com esses filtros —'}
+            {count > 0 ? `${count} registro(s) serão excluídos permanentemente` : '— Nenhum registro encontrado com esses filtros —'}
           </span>
         </div>
         <div style={{ marginBottom: 16 }}>
@@ -648,7 +687,7 @@ function EstoqueAparelhos({ db, refresh }) {
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           {tab === 'estoque' && (
-            <button style={S.btn('danger')} onClick={() => setBulkOpen(true)}>🗑️ Excluir em Lote</button>
+            <button style={{ ...S.btn('danger'), display: 'inline-flex', alignItems: 'center', gap: 7 }} onClick={() => setBulkOpen(true)}><Icon name="trash" size={15} stroke={2} /> Excluir em Lote</button>
           )}
           <button style={S.btn()} onClick={() => openModal()}>+ Adicionar</button>
         </div>
@@ -888,7 +927,7 @@ function EstoqueAcessorios({ db, refresh }) {
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           {tab === 'estoque' && (
-            <button style={S.btn('danger')} onClick={() => setBulkOpen(true)}>🗑️ Excluir em Lote</button>
+            <button style={{ ...S.btn('danger'), display: 'inline-flex', alignItems: 'center', gap: 7 }} onClick={() => setBulkOpen(true)}><Icon name="trash" size={15} stroke={2} /> Excluir em Lote</button>
           )}
           <button style={S.btn()} onClick={() => openModal()}>+ Adicionar</button>
         </div>
@@ -1386,7 +1425,7 @@ function Vendas({ db, refresh }) {
             ))}
           </div>
           <div style={{ marginTop: 16, display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-            <button style={S.btn()} onClick={() => gerarPDFVenda(viewItem)}>📄 Gerar PDF</button>
+            <button style={{ ...S.btn(), display: 'inline-flex', alignItems: 'center', gap: 7 }} onClick={() => gerarPDFVenda(viewItem)}><Icon name="file" size={15} stroke={2} /> Gerar PDF</button>
           </div>
         </Modal>
       )}
@@ -1633,8 +1672,8 @@ function FormVendaFisica({ db, refresh, onClose }) {
           <div key={i} style={{ background: 'var(--purple-bg)', borderRadius: 8, padding: 12, marginBottom: 8, border: '1px solid var(--purple-bg)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
               <div style={{ display: 'flex', gap: 8 }}>
-                <button style={S.filterBtn(ac.tipo === 'brinde')} onClick={() => setAcessorio(i, 'tipo', 'brinde')}>🎁 Brinde</button>
-                <button style={S.filterBtn(ac.tipo === 'venda')} onClick={() => setAcessorio(i, 'tipo', 'venda')}>💰 Venda</button>
+                <button style={S.filterBtn(ac.tipo === 'brinde')} onClick={() => setAcessorio(i, 'tipo', 'brinde')}><Icon name="gift" size={13} stroke={2} /> Brinde</button>
+                <button style={S.filterBtn(ac.tipo === 'venda')} onClick={() => setAcessorio(i, 'tipo', 'venda')}><Icon name="tag" size={13} stroke={2} /> Venda</button>
               </div>
               <button style={S.btn('danger')} onClick={() => removeAcessorio(i)}>×</button>
             </div>
@@ -1697,7 +1736,7 @@ function FormVendaFisica({ db, refresh, onClose }) {
             )}
             {pag.forma === 'TROCA' && (
               <div style={{ marginTop: 12, padding: 12, background: 'var(--danger-bg)', borderRadius: 8, border: '1px dashed var(--danger-bg)' }}>
-                <div style={{ fontSize: 12, color: 'var(--accent-2)', marginBottom: 10, fontWeight: 600 }}>📱 Aparelho de Troca — entrará no estoque automaticamente</div>
+                <div style={{ fontSize: 12, color: 'var(--accent-2)', marginBottom: 10, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="smartphone" size={14} stroke={2} />Aparelho de Troca — entrará no estoque automaticamente</div>
                 <div style={S.row('1fr 1fr')}>
                   <div><label style={S.label}>Marca *</label>
                     <select style={S.select} value={pag.trocaMarca || ''} onChange={e => setPagamento(i, 'trocaMarca', e.target.value)}>
@@ -2106,8 +2145,8 @@ function FormVendaOnline({ db, refresh, onClose }) {
           <div key={i} style={{ background: 'var(--purple-bg)', borderRadius: 8, padding: 12, marginBottom: 8, border: '1px solid var(--purple-bg)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
               <div style={{ display: 'flex', gap: 8 }}>
-                <button style={S.filterBtn(ac.tipo === 'brinde')} onClick={() => setAc(i, 'tipo', 'brinde')}>🎁 Brinde</button>
-                <button style={S.filterBtn(ac.tipo === 'venda')} onClick={() => setAc(i, 'tipo', 'venda')}>💰 Venda</button>
+                <button style={S.filterBtn(ac.tipo === 'brinde')} onClick={() => setAc(i, 'tipo', 'brinde')}><Icon name="gift" size={13} stroke={2} /> Brinde</button>
+                <button style={S.filterBtn(ac.tipo === 'venda')} onClick={() => setAc(i, 'tipo', 'venda')}><Icon name="tag" size={13} stroke={2} /> Venda</button>
               </div>
               <button style={S.btn('danger')} onClick={() => removeAcessorio(i)}>×</button>
             </div>
@@ -2167,7 +2206,7 @@ function FormVendaOnline({ db, refresh, onClose }) {
             )}
             {pag.forma === 'TROCA' && (
               <div style={{ marginTop: 12, padding: 12, background: 'var(--danger-bg)', borderRadius: 8, border: '1px dashed var(--danger-bg)' }}>
-                <div style={{ fontSize: 12, color: 'var(--accent-2)', marginBottom: 10, fontWeight: 600 }}>📱 Aparelho de Troca — entrará no estoque automaticamente</div>
+                <div style={{ fontSize: 12, color: 'var(--accent-2)', marginBottom: 10, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="smartphone" size={14} stroke={2} />Aparelho de Troca — entrará no estoque automaticamente</div>
                 <div style={S.row('1fr 1fr')}>
                   <div><label style={S.label}>Marca *</label>
                     <select style={S.select} value={pag.trocaMarca || ''} onChange={e => setPag(i, 'trocaMarca', e.target.value)}>
@@ -2235,9 +2274,9 @@ function FormVendaOnline({ db, refresh, onClose }) {
       <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 8 }}>
         <button style={S.btn('ghost')} onClick={onClose}>Esconder Aba(Cancelar)</button>
         <button style={{ ...S.btn('ghost'), border: '1px solid var(--info-strong)', color: 'var(--info)' }} onClick={() => salvarERgerarPDF(false, true)} disabled={loading}>Salvar s/ PDF (Novo)</button>
-        <button style={{ ...S.btn(), background: 'var(--info-strong)' }} onClick={() => salvarERgerarPDF(true, true)} disabled={loading}>{loading ? 'Processando...' : '📄 PDF e Add Próximo'}</button>
+        <button style={{ ...S.btn(), background: 'var(--info-strong)', display: 'inline-flex', alignItems: 'center', gap: 7 }} onClick={() => salvarERgerarPDF(true, true)} disabled={loading}>{loading ? 'Processando...' : <><Icon name="file" size={15} stroke={2} /> PDF e Add Próximo</>}</button>
         <button style={{ ...S.btn('ghost'), border: '1px solid var(--line)' }} onClick={() => salvarERgerarPDF(false, false)} disabled={loading}>Salvar s/ PDF e Fechar</button>
-        <button style={S.btn()} onClick={() => salvarERgerarPDF(true, false)} disabled={loading}>{loading ? 'Processando...' : '📄 PDF e Fechar'}</button>
+        <button style={{ ...S.btn(), display: 'inline-flex', alignItems: 'center', gap: 7 }} onClick={() => salvarERgerarPDF(true, false)} disabled={loading}>{loading ? 'Processando...' : <><Icon name="file" size={15} stroke={2} /> PDF e Fechar</>}</button>
       </div>
     </div>
   )
@@ -2471,7 +2510,7 @@ function FormOrcamento({ db, refresh, onClose }) {
       <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
         <button style={S.btn('ghost')} onClick={onClose}>Cancelar</button>
         <button style={{ ...S.btn(), background: 'var(--info-strong)' }} onClick={() => salvarEGerarPDF(false)} disabled={loading}>Salvar sem PDF</button>
-        <button style={S.btn()} onClick={() => salvarEGerarPDF(true)} disabled={loading}>{loading ? 'Processando...' : '📄 Salvar e Gerar PDF'}</button>
+        <button style={{ ...S.btn(), display: 'inline-flex', alignItems: 'center', gap: 7 }} onClick={() => salvarEGerarPDF(true)} disabled={loading}>{loading ? 'Processando...' : <><Icon name="file" size={15} stroke={2} /> Salvar e Gerar PDF</>}</button>
       </div>
     </div>
   )
@@ -2504,7 +2543,7 @@ function Configuracoes({ refresh }) {
   const secoes = [
     {
       id: 'aparelhos',
-      icon: '📱',
+      icon: 'smartphone',
       titulo: 'Aparelhos',
       desc: 'Apaga todo o cadastro de produtos e unidades em estoque de aparelhos.',
       tables: ['estoque_aparelhos', 'cadastro_aparelhos'],
@@ -2512,7 +2551,7 @@ function Configuracoes({ refresh }) {
     },
     {
       id: 'acessorios',
-      icon: '🎧',
+      icon: 'headphones',
       titulo: 'Acessórios',
       desc: 'Apaga todo o cadastro de acessórios e unidades em estoque.',
       tables: ['estoque_acessorios', 'cadastro_acessorios'],
@@ -2520,7 +2559,7 @@ function Configuracoes({ refresh }) {
     },
     {
       id: 'vendas',
-      icon: '💰',
+      icon: 'cart',
       titulo: 'Vendas & Orçamentos',
       desc: 'Apaga todo o histórico de vendas físicas, online e orçamentos.',
       tables: ['vendas'],
@@ -2528,7 +2567,7 @@ function Configuracoes({ refresh }) {
     },
     {
       id: 'custos',
-      icon: '💸',
+      icon: 'trendingDown',
       titulo: 'Custos Operacionais',
       desc: 'Apaga todos os registros de custos e despesas.',
       tables: ['custos'],
@@ -2538,13 +2577,13 @@ function Configuracoes({ refresh }) {
 
   return (
     <div>
-      <div style={S.pageTitle}>⚙️ Configurações</div>
+      <div style={{ ...S.pageTitle, display: 'flex', alignItems: 'center', gap: 10 }}><Icon name="settings" size={22} stroke={2} />Configurações</div>
       <div style={S.pageSub}>Gerencie e redefina os dados do sistema</div>
 
       {resultado && (
         <div style={{ background: resultado.ok ? 'var(--ok-bg)' : 'var(--danger-bg)', border: `1px solid ${resultado.ok ? 'var(--accent)' : 'var(--danger-strong)'}`, borderRadius: 10, padding: '12px 16px', marginBottom: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ color: resultado.ok ? 'var(--accent-2)' : 'var(--danger)', fontSize: 14, fontWeight: 600 }}>
-            {resultado.ok ? '✅' : '❌'} {resultado.msg}
+            <Icon name={resultado.ok ? 'checkCircle' : 'xCircle'} size={16} stroke={2} style={{ marginRight: 6, verticalAlign: '-3px' }} />{resultado.msg}
           </span>
           <button style={{ background: 'none', border: 'none', color: 'var(--mut-2)', cursor: 'pointer', fontSize: 18 }} onClick={() => setResultado(null)}>×</button>
         </div>
@@ -2554,7 +2593,7 @@ function Configuracoes({ refresh }) {
       <div style={{ ...S.card, borderTop: '3px solid var(--danger-strong)', marginBottom: 28 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 20 }}>
           <div>
-            <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--danger)', marginBottom: 6 }}>🚨 Reset Geral</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--danger)', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8 }}><Icon name="alertOctagon" size={18} stroke={2} />Reset Geral</div>
             <div style={{ fontSize: 13, color: 'var(--mut)', lineHeight: 1.6 }}>
               Apaga <strong style={{ color: 'var(--txt)' }}>TODOS</strong> os dados: aparelhos, acessórios, vendas, orçamentos e custos. <span style={{ color: 'var(--danger)' }}>Ação irreversível.</span>
             </div>
@@ -2562,7 +2601,7 @@ function Configuracoes({ refresh }) {
           <button
             style={{ ...S.btn('danger'), whiteSpace: 'nowrap', flexShrink: 0 }}
             onClick={() => setResetModal({
-              title: '🚨 Reset Geral — Apagar TUDO',
+              title: 'Reset Geral — Apagar TUDO',
               msg: 'Isso vai apagar permanentemente todos os aparelhos, acessórios, vendas, orçamentos e custos do sistema.',
               tables: ['estoque_aparelhos', 'cadastro_aparelhos', 'estoque_acessorios', 'cadastro_acessorios', 'vendas', 'custos'],
             })}
@@ -2577,7 +2616,7 @@ function Configuracoes({ refresh }) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
         {secoes.map(s => (
           <div key={s.id} style={{ ...S.card, borderTop: `3px solid ${s.cor}` }}>
-            <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--txt)', marginBottom: 6 }}>{s.icon} {s.titulo}</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--txt)', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8 }}><Icon name={s.icon} size={17} stroke={2} style={{ color: s.cor }} />{s.titulo}</div>
             <div style={{ fontSize: 13, color: 'var(--mut-2)', marginBottom: 18, lineHeight: 1.5 }}>{s.desc}</div>
             <button
               style={{ ...S.btn('danger'), fontSize: 13 }}
@@ -2606,7 +2645,7 @@ function Configuracoes({ refresh }) {
       {loading && (
         <div style={S.modal}>
           <div style={{ ...S.modalBox, maxWidth: 300, textAlign: 'center' }}>
-            <div style={{ fontSize: 32, marginBottom: 12 }}>⏳</div>
+            <div style={{ color: 'var(--accent)', marginBottom: 12, display: 'flex', justifyContent: 'center' }}><Icon name="loader" size={30} stroke={2} style={{ animation: 'spin 1s linear infinite' }} /></div>
             <div style={{ color: 'var(--txt)', fontSize: 15, fontWeight: 600 }}>Zerando dados...</div>
           </div>
         </div>
@@ -2616,12 +2655,12 @@ function Configuracoes({ refresh }) {
 }
 
 const NAV = [
-  { id: 'dashboard', label: '📊 Dashboard', group: 'Geral' },
-  { id: 'estoque-aparelhos', label: '📱 Aparelhos', group: 'Estoque' },
-  { id: 'estoque-acessorios', label: '🎧 Acessórios', group: 'Estoque' },
-  { id: 'vendas', label: '💰 Vendas', group: 'Operações' },
-  { id: 'custos', label: '💸 Custos', group: 'Operações' },
-  { id: 'configuracoes', label: '⚙️ Configurações', group: 'Sistema' },
+  { id: 'dashboard', label: 'Dashboard', icon: 'grid', group: 'Geral' },
+  { id: 'estoque-aparelhos', label: 'Aparelhos', icon: 'smartphone', group: 'Estoque' },
+  { id: 'estoque-acessorios', label: 'Acessórios', icon: 'headphones', group: 'Estoque' },
+  { id: 'vendas', label: 'Vendas', icon: 'cart', group: 'Operações' },
+  { id: 'custos', label: 'Custos', icon: 'trendingDown', group: 'Operações' },
+  { id: 'configuracoes', label: 'Configurações', icon: 'settings', group: 'Sistema' },
 ]
 
 export default function App() {
@@ -2668,14 +2707,14 @@ export default function App() {
       {/* Barra superior (apenas mobile) */}
       {mobile && (
         <div style={S.topbar}>
-          <button style={S.hamburger} onClick={() => setMenuOpen(true)} aria-label="Abrir menu">☰</button>
+          <button style={S.hamburger} onClick={() => setMenuOpen(true)} aria-label="Abrir menu"><Icon name="menu" size={22} stroke={2} /></button>
           <div style={{ fontFamily: 'var(--display)', fontSize: 16, fontWeight: 700, color: 'var(--txt)' }}>{pageLabel}</div>
           <button
             style={{ ...S.themeBtn, marginLeft: 'auto' }}
             onClick={toggleTheme}
             aria-label={theme === 'dark' ? 'Mudar para tema claro' : 'Mudar para tema escuro'}
           >
-            {theme === 'dark' ? '☀️' : '🌙'}
+            <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={18} />
           </button>
         </div>
       )}
@@ -2701,14 +2740,14 @@ export default function App() {
             <div key={g} style={S.navGroup}>
               <div style={S.navGroupLabel}>{g}</div>
               {NAV.filter(n => n.group === g).map(n => (
-                <div key={n.id} style={S.navItem(page === n.id)} onClick={() => go(n.id)}>{n.label}</div>
+                <div key={n.id} style={S.navItem(page === n.id)} onClick={() => go(n.id)}><Icon name={n.icon} size={17} />{n.label}</div>
               ))}
             </div>
           ))}
         </div>
         <div style={{ padding: '12px 16px', borderTop: '1px solid var(--line)' }}>
           <button style={S.themeToggle} onClick={toggleTheme}>
-            <span>{theme === 'dark' ? '☀️' : '🌙'}</span>
+            <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={16} />
             {theme === 'dark' ? 'Tema claro' : 'Tema escuro'}
           </button>
           <div style={{ fontSize: 11, color: 'var(--mut-2)', marginTop: 10 }}>

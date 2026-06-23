@@ -57,6 +57,7 @@
       a, div, span, button, input, select, textarea, table, th, td, h1, h2, h3 {
         transition: background-color .3s ease, border-color .3s ease, color .3s ease;
       }
+      @keyframes spin { to { transform: rotate(360deg); } }
       @media (prefers-reduced-motion: reduce) { *, body { transition: none !important; } }
       ::-webkit-scrollbar { width: 7px; height: 7px; }
       ::-webkit-scrollbar-track { background: var(--scroll-track); }
