@@ -1,19 +1,67 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Core Distribuidora - Sistema</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem('core-theme');
+          document.documentElement.setAttribute('data-theme', t === 'light' ? 'light' : 'dark');
+        } catch (e) {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        }
+      })();
+    </script>
     <style>
+      :root {
+        --accent: #10b981;
+        --accent-soft: rgba(16, 185, 129, .13);
+        --r: 14px;
+        --display: 'Sora', system-ui, sans-serif;
+        --body: 'Inter', system-ui, sans-serif;
+      }
+      html[data-theme="dark"] {
+        --bg: #0c1117; --panel: #141b24; --panel-2: #0f161e; --sidebar: #0a0f15;
+        --line: rgba(255, 255, 255, .07); --txt: #e7ecf3; --mut: #8a94a6; --mut-2: #6b7488;
+        --accent-2: #34d399; --row-alt: rgba(255, 255, 255, .025);
+        --ok-bg: rgba(16, 185, 129, .15);
+        --info: #60a5fa; --info-strong: #2563eb; --info-bg: rgba(59, 130, 246, .16); --info-soft: rgba(59, 130, 246, .10);
+        --danger: #f87171; --danger-strong: #dc2626; --danger-bg: rgba(248, 113, 113, .13);
+        --warn: #fbbf24; --warn-bg: rgba(251, 191, 36, .14);
+        --purple: #a78bfa; --purple-strong: #7c3aed; --purple-bg: rgba(139, 92, 246, .16);
+        --scroll-track: #141b24; --scroll-thumb: #2a3543; --shadow: 0 22px 48px -28px rgba(0, 0, 0, .8);
+      }
+      html[data-theme="light"] {
+        --bg: #eef2f0; --panel: #ffffff; --panel-2: #f5f8f6; --sidebar: #ffffff;
+        --line: rgba(2, 30, 20, .10); --txt: #0f2018; --mut: #5d6b63; --mut-2: #8a958d;
+        --accent-2: #059669; --row-alt: rgba(2, 30, 20, .025);
+        --ok-bg: rgba(16, 185, 129, .12);
+        --info: #2563eb; --info-strong: #1d4ed8; --info-bg: rgba(37, 99, 235, .10); --info-soft: rgba(37, 99, 235, .07);
+        --danger: #dc2626; --danger-strong: #dc2626; --danger-bg: rgba(220, 38, 38, .10);
+        --warn: #b45309; --warn-bg: rgba(245, 158, 11, .16);
+        --purple: #7c3aed; --purple-strong: #6d28d9; --purple-bg: rgba(124, 58, 237, .10);
+        --scroll-track: #e3e8e5; --scroll-thumb: #c3ccc7; --shadow: 0 22px 48px -30px rgba(15, 32, 24, .25);
+      }
       * { margin: 0; padding: 0; box-sizing: border-box; }
       html, body { max-width: 100%; overflow-x: hidden; }
-      body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f172a; color: #e2e8f0; -webkit-text-size-adjust: 100%; }
-      ::-webkit-scrollbar { width: 6px; height: 6px; }
-      ::-webkit-scrollbar-track { background: #1e293b; }
-      ::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
-      @media (max-width: 767px) {
-        input, select, textarea, button { font-size: 16px !important; }
+      body {
+        font-family: var(--body); background: var(--bg); color: var(--txt);
+        -webkit-text-size-adjust: 100%; -webkit-font-smoothing: antialiased;
+        transition: background-color .3s ease, color .3s ease;
       }
+      a, div, span, button, input, select, textarea, table, th, td, h1, h2, h3 {
+        transition: background-color .3s ease, border-color .3s ease, color .3s ease;
+      }
+      @media (prefers-reduced-motion: reduce) { *, body { transition: none !important; } }
+      ::-webkit-scrollbar { width: 7px; height: 7px; }
+      ::-webkit-scrollbar-track { background: var(--scroll-track); }
+      ::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 4px; }
+      @media (max-width: 767px) { input, select, textarea, button { font-size: 16px !important; } }
     </style>
   </head>
   <body>

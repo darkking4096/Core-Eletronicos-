@@ -34,6 +34,24 @@ export function useViewport() {
   }, [])
 }
 
+// ─────────────────────────────────────────────
+// TEMA (claro / escuro) — persistido em localStorage
+// O atributo data-theme no <html> controla as variáveis CSS.
+// ─────────────────────────────────────────────
+export function useTheme() {
+  const getInitial = () => {
+    if (typeof document === 'undefined') return 'dark'
+    return document.documentElement.getAttribute('data-theme') || 'dark'
+  }
+  const [theme, setTheme] = useState(getInitial)
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme)
+    try { localStorage.setItem('core-theme', theme) } catch (e) {}
+  }, [theme])
+  const toggle = useCallback(() => setTheme(t => (t === 'dark' ? 'light' : 'dark')), [])
+  return [theme, toggle]
+}
+
 export function useSessionState(key, initialValue) {
   const [state, setState] = useState(() => {
     try {
@@ -60,9 +78,9 @@ export function useSessionState(key, initialValue) {
 // ESTILOS GLOBAIS
 // ─────────────────────────────────────────────
 const S = {
-  app: { display: 'flex', minHeight: '100vh', background: '#0f172a' },
+  app: { display: 'flex', minHeight: '100vh', background: 'var(--bg)' },
   sidebar: (open) => ({
-    width: 220, background: '#1e293b', borderRight: '1px solid #334155',
+    width: 220, background: 'var(--sidebar)', borderRight: '1px solid var(--line)',
     display: 'flex', flexDirection: 'column', position: 'fixed', top: 0, left: 0,
     height: '100vh', zIndex: 100,
     transition: 'transform 0.25s ease',
@@ -70,48 +88,51 @@ const S = {
     boxShadow: isMobile() && open ? '4px 0 24px rgba(0,0,0,0.5)' : 'none',
   }),
   // Barra superior fixa, visível apenas no mobile
-  topbar: { display: 'flex', alignItems: 'center', gap: 12, position: 'fixed', top: 0, left: 0, right: 0, height: 56, background: '#1e293b', borderBottom: '1px solid #334155', padding: '0 16px', zIndex: 90 },
-  hamburger: { background: 'none', border: 'none', color: '#e2e8f0', fontSize: 24, cursor: 'pointer', lineHeight: 1, padding: 4 },
+  topbar: { display: 'flex', alignItems: 'center', gap: 12, position: 'fixed', top: 0, left: 0, right: 0, height: 56, background: 'var(--panel)', borderBottom: '1px solid var(--line)', padding: '0 16px', zIndex: 90 },
+  hamburger: { background: 'none', border: 'none', color: 'var(--txt)', fontSize: 24, cursor: 'pointer', lineHeight: 1, padding: 4 },
   overlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 99 },
-  sidebarLogo: { padding: '20px 16px 16px', borderBottom: '1px solid #334155' },
-  logoTitle: { fontSize: 16, fontWeight: 700, color: '#34d399', letterSpacing: 1 },
-  logoSub: { fontSize: 11, color: '#64748b', marginTop: 2 },
+  sidebarLogo: { padding: '20px 16px 16px', borderBottom: '1px solid var(--line)' },
+  logoTitle: { fontFamily: 'var(--display)', fontSize: 19, fontWeight: 800, color: 'var(--accent-2)', letterSpacing: 1 },
+  logoSub: { fontSize: 11, color: 'var(--mut-2)', marginTop: 2 },
   navList: { flex: 1, padding: '12px 0', overflowY: 'auto' },
   navGroup: { marginBottom: 4 },
-  navGroupLabel: { fontSize: 10, color: '#475569', fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', padding: '8px 16px 4px' },
-  navItem: (active) => ({ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 16px', cursor: 'pointer', borderLeft: `3px solid ${active ? '#10b981' : 'transparent'}`, background: active ? '#0f172a' : 'transparent', color: active ? '#e2e8f0' : '#94a3b8', fontSize: 13, fontWeight: active ? 600 : 400, transition: 'all 0.15s' }),
+  navGroupLabel: { fontSize: 10, color: 'var(--mut-2)', fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', padding: '8px 16px 4px' },
+  navItem: (active) => ({ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 16px', cursor: 'pointer', borderLeft: `3px solid ${active ? 'var(--accent)' : 'transparent'}`, background: active ? 'var(--accent-soft)' : 'transparent', color: active ? 'var(--txt)' : 'var(--mut)', fontSize: 13, fontWeight: active ? 600 : 400, transition: 'all 0.15s' }),
   main: () => ({ marginLeft: isMobile() ? 0 : 220, flex: 1, padding: isMobile() ? '72px 14px 24px' : 24, minHeight: '100vh', width: '100%', minWidth: 0 }),
-  pageTitle: { fontSize: 22, fontWeight: 700, color: '#e2e8f0', marginBottom: 4 },
-  pageSub: { fontSize: 13, color: '#64748b', marginBottom: 20 },
-  card: { background: '#1e293b', borderRadius: 12, padding: 20, border: '1px solid #334155' },
+  pageTitle: { fontFamily: 'var(--display)', fontSize: 24, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--txt)', marginBottom: 4 },
+  pageSub: { fontSize: 13, color: 'var(--mut-2)', marginBottom: 20 },
+  card: { background: 'var(--panel)', borderRadius: 'var(--r)', padding: 20, border: '1px solid var(--line)' },
   kpiGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16, marginBottom: 24 },
-  kpiCard: (color) => ({ background: '#1e293b', borderRadius: 12, padding: '16px 20px', border: `1px solid #334155`, borderTop: `3px solid ${color || '#10b981'}` }),
-  kpiLabel: { fontSize: 11, color: '#64748b', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 },
-  kpiValue: (color) => ({ fontSize: 22, fontWeight: 700, color: color || '#e2e8f0' }),
-  kpiSub: { fontSize: 11, color: '#475569', marginTop: 3 },
+  kpiCard: (color) => ({ background: 'var(--panel)', borderRadius: 'var(--r)', padding: '16px 20px', border: `1px solid var(--line)`, borderTop: `3px solid ${color || 'var(--accent)'}` }),
+  kpiLabel: { fontSize: 11, color: 'var(--mut-2)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 },
+  kpiValue: (color) => ({ fontFamily: 'var(--display)', fontSize: 24, fontWeight: 700, letterSpacing: '-0.02em', color: color || 'var(--txt)' }),
+  kpiSub: { fontSize: 11, color: 'var(--mut-2)', marginTop: 3 },
   btn: (variant) => ({
     padding: variant === 'sm' ? '6px 12px' : '10px 20px',
-    borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 600,
+    borderRadius: 10, border: 'none', cursor: 'pointer', fontWeight: 600,
     fontSize: variant === 'sm' ? 12 : 14,
-    background: variant === 'danger' ? '#dc2626' : variant === 'ghost' ? 'transparent' : '#10b981',
-    color: variant === 'ghost' ? '#94a3b8' : '#fff',
-    transition: 'opacity 0.15s',
+    background: variant === 'danger' ? 'var(--danger-strong)' : variant === 'ghost' ? 'transparent' : 'linear-gradient(135deg, var(--accent), var(--accent-2))',
+    color: variant === 'ghost' ? 'var(--mut)' : '#fff',
+    boxShadow: (variant === 'ghost' || variant === 'danger') ? 'none' : '0 8px 18px -10px var(--accent)',
+    transition: 'transform 0.15s, opacity 0.15s, box-shadow 0.15s',
   }),
-  input: { width: '100%', padding: '10px 12px', background: '#0f172a', border: '1.5px solid #334155', borderRadius: 8, color: '#e2e8f0', fontSize: 14, outline: 'none' },
-  select: { width: '100%', padding: '10px 12px', background: '#0f172a', border: '1.5px solid #334155', borderRadius: 8, color: '#e2e8f0', fontSize: 14, outline: 'none' },
-  label: { display: 'block', fontSize: 12, color: '#94a3b8', marginBottom: 6, fontWeight: 500 },
+  input: { width: '100%', padding: '10px 12px', background: 'var(--panel-2)', border: '1.5px solid var(--line)', borderRadius: 10, color: 'var(--txt)', fontSize: 14, outline: 'none' },
+  select: { width: '100%', padding: '10px 12px', background: 'var(--panel-2)', border: '1.5px solid var(--line)', borderRadius: 10, color: 'var(--txt)', fontSize: 14, outline: 'none' },
+  label: { display: 'block', fontSize: 12, color: 'var(--mut)', marginBottom: 6, fontWeight: 500 },
   formGroup: { marginBottom: 16 },
   row: (cols) => ({ display: 'grid', gridTemplateColumns: isMobile() ? '1fr' : (cols || '1fr 1fr'), gap: 14, marginBottom: 0 }),
   table: { width: '100%', borderCollapse: 'collapse', fontSize: 13 },
-  th: { padding: '10px 12px', background: '#0f172a', color: '#94a3b8', textAlign: 'left', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5, borderBottom: '1px solid #334155', cursor: 'pointer', userSelect: 'none' },
-  td: { padding: '10px 12px', borderBottom: '1px solid #1e293b', color: '#cbd5e1', fontSize: 13 },
-  badge: (color) => ({ display: 'inline-block', padding: '3px 8px', borderRadius: 20, fontSize: 11, fontWeight: 600, background: color === 'green' ? '#064e3b' : color === 'blue' ? '#1e3a5f' : color === 'yellow' ? '#451a03' : color === 'red' ? '#450a0a' : '#1e293b', color: color === 'green' ? '#34d399' : color === 'blue' ? '#60a5fa' : color === 'yellow' ? '#fbbf24' : color === 'red' ? '#f87171' : '#94a3b8' }),
+  th: { padding: '10px 12px', background: 'var(--bg)', color: 'var(--mut)', textAlign: 'left', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5, borderBottom: '1px solid var(--line)', cursor: 'pointer', userSelect: 'none' },
+  td: { padding: '10px 12px', borderBottom: '1px solid var(--panel)', color: 'var(--txt)', fontSize: 13 },
+  badge: (color) => ({ display: 'inline-block', padding: '3px 8px', borderRadius: 20, fontSize: 11, fontWeight: 600, background: color === 'green' ? 'var(--ok-bg)' : color === 'blue' ? 'var(--info-bg)' : color === 'yellow' ? 'var(--warn-bg)' : color === 'red' ? 'var(--danger-bg)' : 'var(--panel)', color: color === 'green' ? 'var(--accent-2)' : color === 'blue' ? 'var(--info)' : color === 'yellow' ? 'var(--warn)' : color === 'red' ? 'var(--danger)' : 'var(--mut)' }),
   modal: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 },
-  modalBox: { background: '#1e293b', borderRadius: 16, padding: 28, width: '100%', maxWidth: 640, maxHeight: '90vh', overflowY: 'auto', border: '1px solid #334155' },
-  tabs: { display: 'flex', gap: 4, marginBottom: 20, borderBottom: '1px solid #334155', paddingBottom: 0 },
-  tab: (active) => ({ padding: '8px 16px', cursor: 'pointer', fontSize: 13, fontWeight: active ? 600 : 400, color: active ? '#34d399' : '#64748b', borderBottom: `2px solid ${active ? '#10b981' : 'transparent'}`, marginBottom: -1, transition: 'all 0.15s', background: 'none', border: 'none' }),
+  modalBox: { background: 'var(--panel)', borderRadius: 18, padding: 28, width: '100%', maxWidth: 640, maxHeight: '90vh', overflowY: 'auto', border: '1px solid var(--line)', boxShadow: 'var(--shadow)' },
+  tabs: { display: 'flex', gap: 4, marginBottom: 20, borderBottom: '1px solid var(--line)', paddingBottom: 0 },
+  tab: (active) => ({ padding: '8px 16px', cursor: 'pointer', fontSize: 13, fontWeight: active ? 600 : 400, color: active ? 'var(--accent-2)' : 'var(--mut-2)', borderBottom: `2px solid ${active ? 'var(--accent)' : 'transparent'}`, marginBottom: -1, transition: 'all 0.15s', background: 'none', border: 'none' }),
   filterRow: { display: 'flex', gap: 10, marginBottom: 20, alignItems: 'center', flexWrap: 'wrap' },
-  filterBtn: (active) => ({ padding: '6px 14px', borderRadius: 20, border: `1px solid ${active ? '#10b981' : '#334155'}`, background: active ? '#10b981' : 'transparent', color: active ? '#fff' : '#94a3b8', fontSize: 12, cursor: 'pointer', fontWeight: active ? 600 : 400 }),
+  filterBtn: (active) => ({ padding: '6px 14px', borderRadius: 20, border: `1px solid ${active ? 'var(--accent)' : 'var(--line)'}`, background: active ? 'var(--accent)' : 'transparent', color: active ? '#fff' : 'var(--mut)', fontSize: 12, cursor: 'pointer', fontWeight: active ? 600 : 400 }),
+  themeToggle: { display: 'flex', alignItems: 'center', gap: 8, width: '100%', justifyContent: 'center', padding: '8px 12px', borderRadius: 10, border: '1px solid var(--line)', background: 'var(--accent-soft)', color: 'var(--txt)', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' },
+  themeBtn: { display: 'grid', placeItems: 'center', width: 38, height: 38, borderRadius: 10, border: '1px solid var(--line)', background: 'var(--accent-soft)', fontSize: 16, cursor: 'pointer', lineHeight: 1 },
 }
 
 // ─────────────────────────────────────────────
@@ -123,8 +144,8 @@ function Modal({ open, onClose, title, children, wide }) {
     <div style={S.modal} onClick={e => e.target === e.currentTarget && onClose()}>
       <div style={{ ...S.modalBox, maxWidth: wide ? 820 : 640 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-          <h2 style={{ fontSize: 18, fontWeight: 700, color: '#e2e8f0' }}>{title}</h2>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#64748b', fontSize: 22, cursor: 'pointer' }}>×</button>
+          <h2 style={{ fontFamily: 'var(--display)', fontSize: 18, fontWeight: 700, color: 'var(--txt)' }}>{title}</h2>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--mut-2)', fontSize: 22, cursor: 'pointer' }}>×</button>
         </div>
         {children}
       </div>
@@ -138,8 +159,8 @@ function ConfirmModal({ open, msg, onConfirm, onCancel }) {
     <div style={S.modal}>
       <div style={{ ...S.modalBox, maxWidth: 380, textAlign: 'center' }}>
         <div style={{ fontSize: 36, marginBottom: 12 }}>⚠️</div>
-        <div style={{ fontSize: 16, color: '#e2e8f0', fontWeight: 600, marginBottom: 8 }}>Confirmar exclusão</div>
-        <div style={{ fontSize: 14, color: '#94a3b8', marginBottom: 24 }}>{msg}</div>
+        <div style={{ fontSize: 16, color: 'var(--txt)', fontWeight: 600, marginBottom: 8 }}>Confirmar exclusão</div>
+        <div style={{ fontSize: 14, color: 'var(--mut)', marginBottom: 24 }}>{msg}</div>
         <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
           <button style={S.btn('ghost')} onClick={onCancel}>Cancelar</button>
           <button style={S.btn('danger')} onClick={onConfirm}>Excluir</button>
@@ -157,12 +178,12 @@ function ResetModal({ open, title, msg, onConfirm, onCancel }) {
     <div style={S.modal}>
       <div style={{ ...S.modalBox, maxWidth: 440, textAlign: 'center' }}>
         <div style={{ fontSize: 44, marginBottom: 12 }}>🚨</div>
-        <div style={{ fontSize: 17, color: '#f87171', fontWeight: 700, marginBottom: 8 }}>{title}</div>
-        <div style={{ fontSize: 14, color: '#94a3b8', marginBottom: 20 }}>{msg}</div>
+        <div style={{ fontSize: 17, color: 'var(--danger)', fontWeight: 700, marginBottom: 8 }}>{title}</div>
+        <div style={{ fontSize: 14, color: 'var(--mut)', marginBottom: 20 }}>{msg}</div>
         <div style={{ marginBottom: 20, textAlign: 'left' }}>
-          <label style={{ ...S.label, color: '#f87171' }}>Digite CONFIRMAR para prosseguir:</label>
+          <label style={{ ...S.label, color: 'var(--danger)' }}>Digite CONFIRMAR para prosseguir:</label>
           <input
-            style={{ ...S.input, borderColor: ok ? '#16a34a' : '#334155', textAlign: 'center', letterSpacing: 3, fontWeight: 700 }}
+            style={{ ...S.input, borderColor: ok ? 'var(--accent)' : 'var(--line)', textAlign: 'center', letterSpacing: 3, fontWeight: 700 }}
             value={texto}
             onChange={e => setTexto(e.target.value.toUpperCase())}
             placeholder="CONFIRMAR"
@@ -191,17 +212,17 @@ function BulkDeleteModal({ open, title, count, onConfirm, onCancel, children }) 
     <div style={S.modal}>
       <div style={{ ...S.modalBox, maxWidth: 480 }}>
         <div style={{ fontSize: 36, marginBottom: 10, textAlign: 'center' }}>🗑️</div>
-        <div style={{ fontSize: 17, color: '#f87171', fontWeight: 700, marginBottom: 16, textAlign: 'center' }}>{title}</div>
+        <div style={{ fontSize: 17, color: 'var(--danger)', fontWeight: 700, marginBottom: 16, textAlign: 'center' }}>{title}</div>
         {children}
-        <div style={{ background: '#0f172a', borderRadius: 8, padding: '10px 16px', marginBottom: 16, textAlign: 'center' }}>
-          <span style={{ color: count > 0 ? '#f87171' : '#64748b', fontWeight: 700, fontSize: 14 }}>
+        <div style={{ background: 'var(--bg)', borderRadius: 8, padding: '10px 16px', marginBottom: 16, textAlign: 'center' }}>
+          <span style={{ color: count > 0 ? 'var(--danger)' : 'var(--mut-2)', fontWeight: 700, fontSize: 14 }}>
             {count > 0 ? `⚠️ ${count} registro(s) serão excluídos permanentemente` : '— Nenhum registro encontrado com esses filtros —'}
           </span>
         </div>
         <div style={{ marginBottom: 16 }}>
-          <label style={{ ...S.label, color: '#f87171' }}>Digite CONFIRMAR para prosseguir:</label>
+          <label style={{ ...S.label, color: 'var(--danger)' }}>Digite CONFIRMAR para prosseguir:</label>
           <input
-            style={{ ...S.input, borderColor: ok ? '#16a34a' : '#334155', textAlign: 'center', letterSpacing: 3, fontWeight: 700 }}
+            style={{ ...S.input, borderColor: ok ? 'var(--accent)' : 'var(--line)', textAlign: 'center', letterSpacing: 3, fontWeight: 700 }}
             value={texto}
             onChange={e => setTexto(e.target.value.toUpperCase())}
             placeholder="CONFIRMAR"
@@ -247,7 +268,7 @@ function DateFilter({ value, onChange }) {
 
   return (
     <div style={S.filterRow}>
-      <span style={{ fontSize: 12, color: '#64748b' }}>Período:</span>
+      <span style={{ fontSize: 12, color: 'var(--mut-2)' }}>Período:</span>
       {presets.map(p => (
         <button key={p.key} style={S.filterBtn(value?.label === p.label)} onClick={() => apply(p.key)}>{p.label}</button>
       ))}
@@ -256,7 +277,7 @@ function DateFilter({ value, onChange }) {
       {custom && (
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <input type="date" value={start} onChange={e => setStart(e.target.value)} style={{ ...S.input, width: 140 }} />
-          <span style={{ color: '#64748b' }}>até</span>
+          <span style={{ color: 'var(--mut-2)' }}>até</span>
           <input type="date" value={end} onChange={e => setEnd(e.target.value)} style={{ ...S.input, width: 140 }} />
           <button style={S.btn()} onClick={applyCustom}>Aplicar</button>
         </div>
@@ -298,10 +319,10 @@ function SortableTable({ columns, data, onEdit, onDelete, onView }) {
         </thead>
         <tbody>
           {sorted.length === 0 && (
-            <tr><td colSpan={columns.length + 1} style={{ ...S.td, textAlign: 'center', color: '#475569', padding: 32 }}>Nenhum registro encontrado</td></tr>
+            <tr><td colSpan={columns.length + 1} style={{ ...S.td, textAlign: 'center', color: 'var(--mut-2)', padding: 32 }}>Nenhum registro encontrado</td></tr>
           )}
           {sorted.map((row, i) => (
-            <tr key={row.id || i} style={{ background: i % 2 === 0 ? 'transparent' : '#0f172a22' }}>
+            <tr key={row.id || i} style={{ background: i % 2 === 0 ? 'transparent' : 'var(--row-alt)' }}>
               {columns.map(c => (
                 <td key={c.key} style={S.td}>
                   {c.render ? c.render(row[c.key], row) : (row[c.key] ?? '-')}
@@ -311,8 +332,8 @@ function SortableTable({ columns, data, onEdit, onDelete, onView }) {
                 <td style={S.td}>
                   <div style={{ display: 'flex', gap: 6 }}>
                     {onView && <button style={S.btn('sm')} onClick={() => onView(row)}>Ver</button>}
-                    {onEdit && <button style={{ ...S.btn('sm'), background: '#1d4ed8' }} onClick={() => onEdit(row)}>Editar</button>}
-                    {onDelete && <button style={{ ...S.btn('sm'), background: '#dc2626' }} onClick={() => onDelete(row)}>Excluir</button>}
+                    {onEdit && <button style={{ ...S.btn('sm'), background: 'var(--info-strong)' }} onClick={() => onEdit(row)}>Editar</button>}
+                    {onDelete && <button style={{ ...S.btn('sm'), background: 'var(--danger-strong)' }} onClick={() => onDelete(row)}>Excluir</button>}
                   </div>
                 </td>
               )}
@@ -372,9 +393,9 @@ function Autocomplete({ value, onChange, options, placeholder, getLabel }) {
         onKeyDown={handleKeyDown}
       />
       {open && filtered.length > 0 && (
-        <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#0f172a', border: '1px solid #334155', borderRadius: 8, zIndex: 200, maxHeight: 220, overflowY: 'auto' }}>
+        <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 8, zIndex: 200, maxHeight: 220, overflowY: 'auto' }}>
           {filtered.map((o, i) => (
-            <div key={i} style={{ padding: '8px 12px', cursor: 'pointer', color: '#e2e8f0', fontSize: 13, borderBottom: '1px solid #1e293b' }}
+            <div key={i} style={{ padding: '8px 12px', cursor: 'pointer', color: 'var(--txt)', fontSize: 13, borderBottom: '1px solid var(--panel)' }}
               onMouseDown={() => handleSelect(o)}>
               {label(o)}
             </div>
@@ -414,7 +435,7 @@ function Dashboard({ db }) {
     setData({ totalVendas, lucroPorVenda, custosOp, lucroReal, investAp, investAc, totalInvest: investAp + investAc, gastosPorTipo, custos })
   }, [filter, db])
 
-  if (!data) return <div style={{ color: '#64748b' }}>Carregando...</div>
+  if (!data) return <div style={{ color: 'var(--mut-2)' }}>Carregando...</div>
 
   return (
     <div>
@@ -422,52 +443,52 @@ function Dashboard({ db }) {
       <div style={S.pageSub}>Visão geral financeira do período</div>
       <DateFilter value={filter} onChange={setFilter} />
       <div style={S.kpiGrid}>
-        <div style={S.kpiCard('#3b82f6')}>
+        <div style={S.kpiCard('var(--info)')}>
           <div style={S.kpiLabel}>Vendas no Período</div>
-          <div style={S.kpiValue('#60a5fa')}>{data.totalVendas}</div>
+          <div style={S.kpiValue('var(--info)')}>{data.totalVendas}</div>
         </div>
-        <div style={S.kpiCard('#10b981')}>
+        <div style={S.kpiCard('var(--accent)')}>
           <div style={S.kpiLabel}>Lucro por Venda</div>
-          <div style={S.kpiValue('#34d399')}>{formatMoney(data.lucroPorVenda)}</div>
+          <div style={S.kpiValue('var(--accent-2)')}>{formatMoney(data.lucroPorVenda)}</div>
           <div style={S.kpiSub}>Sem descontar custos op.</div>
         </div>
-        <div style={S.kpiCard('#f59e0b')}>
+        <div style={S.kpiCard('var(--warn)')}>
           <div style={S.kpiLabel}>Custos Operacionais</div>
-          <div style={S.kpiValue('#fbbf24')}>{formatMoney(data.custosOp)}</div>
+          <div style={S.kpiValue('var(--warn)')}>{formatMoney(data.custosOp)}</div>
         </div>
-        <div style={S.kpiCard(data.lucroReal >= 0 ? '#10b981' : '#ef4444')}>
+        <div style={S.kpiCard(data.lucroReal >= 0 ? 'var(--accent)' : 'var(--danger-strong)')}>
           <div style={S.kpiLabel}>Lucro Real</div>
-          <div style={S.kpiValue(data.lucroReal >= 0 ? '#34d399' : '#f87171')}>{formatMoney(data.lucroReal)}</div>
+          <div style={S.kpiValue(data.lucroReal >= 0 ? 'var(--accent-2)' : 'var(--danger)')}>{formatMoney(data.lucroReal)}</div>
           <div style={S.kpiSub}>Lucro/Venda - Custos Op.</div>
         </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile() ? '1fr' : '1fr 1fr', gap: 16, marginBottom: 24 }}>
         <div style={S.card}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: '#e2e8f0', marginBottom: 14 }}>Investimentos no Período</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--txt)', marginBottom: 14 }}>Investimentos no Período</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: '#0f172a', borderRadius: 8 }}>
-              <span style={{ color: '#94a3b8', fontSize: 13 }}>Estoque de Aparelhos</span>
-              <span style={{ color: '#60a5fa', fontWeight: 600 }}>{formatMoney(data.investAp)}</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--bg)', borderRadius: 8 }}>
+              <span style={{ color: 'var(--mut)', fontSize: 13 }}>Estoque de Aparelhos</span>
+              <span style={{ color: 'var(--info)', fontWeight: 600 }}>{formatMoney(data.investAp)}</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: '#0f172a', borderRadius: 8 }}>
-              <span style={{ color: '#94a3b8', fontSize: 13 }}>Estoque de Acessórios</span>
-              <span style={{ color: '#a78bfa', fontWeight: 600 }}>{formatMoney(data.investAc)}</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--bg)', borderRadius: 8 }}>
+              <span style={{ color: 'var(--mut)', fontSize: 13 }}>Estoque de Acessórios</span>
+              <span style={{ color: 'var(--purple)', fontWeight: 600 }}>{formatMoney(data.investAc)}</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 12px', background: '#1d4ed822', borderRadius: 8, borderTop: '1px solid #334155' }}>
-              <span style={{ color: '#e2e8f0', fontWeight: 700, fontSize: 13 }}>Total Investido</span>
-              <span style={{ color: '#e2e8f0', fontWeight: 700 }}>{formatMoney(data.totalInvest)}</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 12px', background: 'var(--info-soft)', borderRadius: 8, borderTop: '1px solid var(--line)' }}>
+              <span style={{ color: 'var(--txt)', fontWeight: 700, fontSize: 13 }}>Total Investido</span>
+              <span style={{ color: 'var(--txt)', fontWeight: 700 }}>{formatMoney(data.totalInvest)}</span>
             </div>
           </div>
         </div>
         <div style={S.card}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: '#e2e8f0', marginBottom: 14 }}>Gastos por Categoria</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--txt)', marginBottom: 14 }}>Gastos por Categoria</div>
           <div style={{ maxHeight: 200, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {Object.keys(data.gastosPorTipo).length === 0 && <div style={{ color: '#475569', fontSize: 13 }}>Nenhum gasto no período</div>}
+            {Object.keys(data.gastosPorTipo).length === 0 && <div style={{ color: 'var(--mut-2)', fontSize: 13 }}>Nenhum gasto no período</div>}
             {Object.entries(data.gastosPorTipo).sort((a, b) => b[1] - a[1]).map(([tipo, val]) => (
-              <div key={tipo} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 10px', background: '#0f172a', borderRadius: 6 }}>
-                <span style={{ color: '#94a3b8', fontSize: 12 }}>{tipo}</span>
-                <span style={{ color: '#fbbf24', fontWeight: 600, fontSize: 12 }}>{formatMoney(val)}</span>
+              <div key={tipo} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 10px', background: 'var(--bg)', borderRadius: 6 }}>
+                <span style={{ color: 'var(--mut)', fontSize: 12 }}>{tipo}</span>
+                <span style={{ color: 'var(--warn)', fontWeight: 600, fontSize: 12 }}>{formatMoney(val)}</span>
               </div>
             ))}
           </div>
@@ -656,7 +677,7 @@ function EstoqueAparelhos({ db, refresh }) {
               placeholder="Ex: AP001 — digite para buscar do cadastro"
               getLabel={o => typeof o === 'string' ? o : `${o.cod} - ${o.marca} ${o.modelo} ${o.capacidade} ${o.cor}`}
             />
-            <div style={{ fontSize: 11, color: '#475569', marginTop: 4 }}>Digite o código e pressione Enter para preencher os campos automaticamente</div>
+            <div style={{ fontSize: 11, color: 'var(--mut-2)', marginTop: 4 }}>Digite o código e pressione Enter para preencher os campos automaticamente</div>
           </div>
         )}
         {tab === 'cadastro' && (
@@ -703,10 +724,10 @@ function EstoqueAparelhos({ db, refresh }) {
             </div>
           </div>
         )}
-        {msg && <div style={{ color: '#f87171', fontSize: 13, marginBottom: 12 }}>{msg}</div>}
+        {msg && <div style={{ color: 'var(--danger)', fontSize: 13, marginBottom: 12 }}>{msg}</div>}
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 8 }}>
           <button style={S.btn('ghost')} onClick={() => setModalOpen(false)}>Esconder Aba(Cancelar)</button>
-          <button style={{ ...S.btn(), background: '#1d4ed8' }} onClick={() => salvar(true)} disabled={loading}>{loading ? 'Salvando...' : 'Salvar e Adicionar Próximo'}</button>
+          <button style={{ ...S.btn(), background: 'var(--info-strong)' }} onClick={() => salvar(true)} disabled={loading}>{loading ? 'Salvando...' : 'Salvar e Adicionar Próximo'}</button>
           <button style={S.btn()} onClick={() => salvar(false)} disabled={loading}>{loading ? 'Salvando...' : 'Salvar e Fechar'}</button>
         </div>
       </Modal>
@@ -723,7 +744,7 @@ function EstoqueAparelhos({ db, refresh }) {
           <div style={S.formGroup}>
             <label style={S.label}>Adquiridos até (opcional)</label>
             <input style={S.input} type="date" value={bulkDataAte} onChange={e => setBulkDataAte(e.target.value)} />
-            {bulkDataAte && <span style={{ fontSize: 11, color: '#64748b', marginTop: 3, display: 'block' }}>← remove esse filtro para não limitar por data</span>}
+            {bulkDataAte && <span style={{ fontSize: 11, color: 'var(--mut-2)', marginTop: 3, display: 'block' }}>← remove esse filtro para não limitar por data</span>}
           </div>
         </div>
       </BulkDeleteModal>
@@ -935,10 +956,10 @@ function EstoqueAcessorios({ db, refresh }) {
             </div>
           </div>
         )}
-        {msg && <div style={{ color: '#f87171', fontSize: 13, marginBottom: 12 }}>{msg}</div>}
+        {msg && <div style={{ color: 'var(--danger)', fontSize: 13, marginBottom: 12 }}>{msg}</div>}
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 8 }}>
           <button style={S.btn('ghost')} onClick={() => setModalOpen(false)}>Esconder Aba(Cancelar)</button>
-          <button style={{ ...S.btn(), background: '#1d4ed8' }} onClick={() => salvar(true)} disabled={loading}>{loading ? 'Salvando...' : 'Salvar e Adicionar Próximo'}</button>
+          <button style={{ ...S.btn(), background: 'var(--info-strong)' }} onClick={() => salvar(true)} disabled={loading}>{loading ? 'Salvando...' : 'Salvar e Adicionar Próximo'}</button>
           <button style={S.btn()} onClick={() => salvar(false)} disabled={loading}>{loading ? 'Salvando...' : 'Salvar e Fechar'}</button>
         </div>
       </Modal>
@@ -962,7 +983,7 @@ function EstoqueAcessorios({ db, refresh }) {
               onChange={e => setBulkQtdMax(e.target.value)}
               placeholder="Ex: 0 = apenas zerados"
             />
-            <span style={{ fontSize: 11, color: '#64748b', marginTop: 3, display: 'block' }}>Exclui lotes com quantidade ≤ esse valor. Deixe em branco para ignorar.</span>
+            <span style={{ fontSize: 11, color: 'var(--mut-2)', marginTop: 3, display: 'block' }}>Exclui lotes com quantidade ≤ esse valor. Deixe em branco para ignorar.</span>
           </div>
           <div style={S.formGroup}>
             <label style={S.label}>Adquiridos até (opcional)</label>
@@ -1016,7 +1037,7 @@ function Custos({ db, refresh }) {
     { key: 'data', label: 'Data', render: v => formatDate(v) },
     { key: 'tipo', label: 'Tipo' },
     { key: 'categoria', label: 'Categoria', render: v => <span style={S.badge('yellow')}>{v}</span> },
-    { key: 'valor', label: 'Valor', render: v => <span style={{ color: '#f87171', fontWeight: 600 }}>{formatMoney(v)}</span> },
+    { key: 'valor', label: 'Valor', render: v => <span style={{ color: 'var(--danger)', fontWeight: 600 }}>{formatMoney(v)}</span> },
     { key: 'observacao', label: 'Observação' },
   ]
 
@@ -1032,9 +1053,9 @@ function Custos({ db, refresh }) {
         <button style={S.btn()} onClick={() => { setModalOpen(true); setMsg('') }}>+ Novo Custo</button>
       </div>
       <DateFilter value={filter} onChange={setFilter} />
-      <div style={{ marginBottom: 16, padding: '12px 16px', background: '#1e293b', borderRadius: 10, display: 'inline-flex', gap: 24 }}>
-        <div><span style={{ color: '#64748b', fontSize: 12 }}>Total no período: </span><span style={{ color: '#f87171', fontWeight: 700 }}>{formatMoney(totalFiltrado)}</span></div>
-        <div><span style={{ color: '#64748b', fontSize: 12 }}>Registros: </span><span style={{ color: '#e2e8f0', fontWeight: 700 }}>{filtered.length}</span></div>
+      <div style={{ marginBottom: 16, padding: '12px 16px', background: 'var(--panel)', borderRadius: 10, display: 'inline-flex', gap: 24 }}>
+        <div><span style={{ color: 'var(--mut-2)', fontSize: 12 }}>Total no período: </span><span style={{ color: 'var(--danger)', fontWeight: 700 }}>{formatMoney(totalFiltrado)}</span></div>
+        <div><span style={{ color: 'var(--mut-2)', fontSize: 12 }}>Registros: </span><span style={{ color: 'var(--txt)', fontWeight: 700 }}>{filtered.length}</span></div>
       </div>
       <div style={S.card}>
         <SortableTable columns={cols} data={filtered} onDelete={excluir} />
@@ -1070,10 +1091,10 @@ function Custos({ db, refresh }) {
           <label style={S.label}>Observação (opcional)</label>
           <textarea style={{ ...S.input, minHeight: 80, resize: 'vertical' }} value={form.observacao} onChange={e => setForm(f => ({ ...f, observacao: e.target.value }))} placeholder="Detalhes adicionais..." />
         </div>
-        {msg && <div style={{ color: '#f87171', fontSize: 13, marginBottom: 12 }}>{msg}</div>}
+        {msg && <div style={{ color: 'var(--danger)', fontSize: 13, marginBottom: 12 }}>{msg}</div>}
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 8 }}>
           <button style={S.btn('ghost')} onClick={() => setModalOpen(false)}>Esconder Aba(Cancelar)</button>
-          <button style={{ ...S.btn(), background: '#1d4ed8' }} onClick={() => salvar(true)} disabled={loading}>{loading ? 'Salvando...' : 'Registrar e Adicionar Próximo'}</button>
+          <button style={{ ...S.btn(), background: 'var(--info-strong)' }} onClick={() => salvar(true)} disabled={loading}>{loading ? 'Salvando...' : 'Registrar e Adicionar Próximo'}</button>
           <button style={S.btn()} onClick={() => salvar(false)} disabled={loading}>{loading ? 'Salvando...' : 'Registrar e Fechar'}</button>
         </div>
       </Modal>
@@ -1288,7 +1309,7 @@ function Vendas({ db, refresh }) {
     { key: 'acessorios_descricao', label: 'Acessórios' },
     { key: 'pagamentos', label: 'Pagamento' },
     { key: 'preco_venda', label: 'Valor', render: v => formatMoney(v) },
-    { key: 'lucro_venda', label: 'Lucro', render: v => <span style={{ color: '#34d399', fontWeight: 600 }}>{formatMoney(v)}</span> },
+    { key: 'lucro_venda', label: 'Lucro', render: v => <span style={{ color: 'var(--accent-2)', fontWeight: 600 }}>{formatMoney(v)}</span> },
   ]
 
   const colsOnline = [
@@ -1297,7 +1318,7 @@ function Vendas({ db, refresh }) {
     { key: 'aparelhos_descricao', label: 'Produto' },
     { key: 'pagamentos', label: 'Pagamento' },
     { key: 'preco_venda', label: 'Valor', render: v => formatMoney(v) },
-    { key: 'lucro_venda', label: 'Lucro', render: v => <span style={{ color: '#34d399', fontWeight: 600 }}>{formatMoney(v)}</span> },
+    { key: 'lucro_venda', label: 'Lucro', render: v => <span style={{ color: 'var(--accent-2)', fontWeight: 600 }}>{formatMoney(v)}</span> },
     { key: 'taxa_total', label: 'Taxa', render: v => formatMoney(v) },
   ]
 
@@ -1319,10 +1340,10 @@ function Vendas({ db, refresh }) {
         <button style={S.tab(tab === 'orcamento')} onClick={() => setTab('orcamento')}>Orçamentos</button>
       </div>
       <DateFilter value={filter} onChange={setFilter} />
-      <div style={{ marginBottom: 16, padding: '12px 16px', background: '#1e293b', borderRadius: 10, display: 'inline-flex', gap: 24 }}>
-        <div><span style={{ color: '#64748b', fontSize: 12 }}>Total vendido: </span><span style={{ color: '#60a5fa', fontWeight: 700 }}>{formatMoney(totalPeriodo)}</span></div>
-        <div><span style={{ color: '#64748b', fontSize: 12 }}>Lucro: </span><span style={{ color: '#34d399', fontWeight: 700 }}>{formatMoney(lucroTotal)}</span></div>
-        <div><span style={{ color: '#64748b', fontSize: 12 }}>Registros: </span><span style={{ color: '#e2e8f0', fontWeight: 700 }}>{vendas.length}</span></div>
+      <div style={{ marginBottom: 16, padding: '12px 16px', background: 'var(--panel)', borderRadius: 10, display: 'inline-flex', gap: 24 }}>
+        <div><span style={{ color: 'var(--mut-2)', fontSize: 12 }}>Total vendido: </span><span style={{ color: 'var(--info)', fontWeight: 700 }}>{formatMoney(totalPeriodo)}</span></div>
+        <div><span style={{ color: 'var(--mut-2)', fontSize: 12 }}>Lucro: </span><span style={{ color: 'var(--accent-2)', fontWeight: 700 }}>{formatMoney(lucroTotal)}</span></div>
+        <div><span style={{ color: 'var(--mut-2)', fontSize: 12 }}>Registros: </span><span style={{ color: 'var(--txt)', fontWeight: 700 }}>{vendas.length}</span></div>
       </div>
       <div style={S.card}>
         <SortableTable
@@ -1358,9 +1379,9 @@ function Vendas({ db, refresh }) {
               ['Lucro', formatMoney(viewItem.lucro_venda)],
               ['Observação', viewItem.observacao],
             ].filter(([, v]) => v).map(([l, v]) => (
-              <div key={l} style={{ display: 'flex', gap: 10, padding: '6px 0', borderBottom: '1px solid #334155' }}>
-                <span style={{ color: '#64748b', fontSize: 12, minWidth: 80 }}>{l}</span>
-                <span style={{ color: '#e2e8f0', fontSize: 13 }}>{v}</span>
+              <div key={l} style={{ display: 'flex', gap: 10, padding: '6px 0', borderBottom: '1px solid var(--line)' }}>
+                <span style={{ color: 'var(--mut-2)', fontSize: 12, minWidth: 80 }}>{l}</span>
+                <span style={{ color: 'var(--txt)', fontSize: 13 }}>{v}</span>
               </div>
             ))}
           </div>
@@ -1578,9 +1599,9 @@ function FormVendaFisica({ db, refresh, onClose }) {
           <button style={S.btn('sm')} onClick={addAparelho}>+ Adicionar</button>
         </div>
         {aparelhos.map((ap, i) => (
-          <div key={i} style={{ background: '#0f172a', borderRadius: 8, padding: 12, marginBottom: 8, border: '1px solid #334155' }}>
+          <div key={i} style={{ background: 'var(--bg)', borderRadius: 8, padding: 12, marginBottom: 8, border: '1px solid var(--line)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-              <span style={{ fontSize: 12, color: '#64748b' }}>Aparelho #{i + 1}</span>
+              <span style={{ fontSize: 12, color: 'var(--mut-2)' }}>Aparelho #{i + 1}</span>
               {i > 0 && <button style={S.btn('danger')} onClick={() => removeAparelho(i)}>×</button>}
             </div>
             <div style={S.row('2fr 1fr')}>
@@ -1606,10 +1627,10 @@ function FormVendaFisica({ db, refresh, onClose }) {
       <div style={{ marginBottom: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
           <label style={{ ...S.label, marginBottom: 0 }}>Acessórios (opcional)</label>
-          <button style={{ ...S.btn('sm'), background: '#7c3aed' }} onClick={addAcessorio}>+ Adicionar</button>
+          <button style={{ ...S.btn('sm'), background: 'var(--purple-strong)' }} onClick={addAcessorio}>+ Adicionar</button>
         </div>
         {acessorios.map((ac, i) => (
-          <div key={i} style={{ background: '#1a1030', borderRadius: 8, padding: 12, marginBottom: 8, border: '1px solid #4c1d95' }}>
+          <div key={i} style={{ background: 'var(--purple-bg)', borderRadius: 8, padding: 12, marginBottom: 8, border: '1px solid var(--purple-bg)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
               <div style={{ display: 'flex', gap: 8 }}>
                 <button style={S.filterBtn(ac.tipo === 'brinde')} onClick={() => setAcessorio(i, 'tipo', 'brinde')}>🎁 Brinde</button>
@@ -1638,12 +1659,12 @@ function FormVendaFisica({ db, refresh, onClose }) {
       <div style={{ marginBottom: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
           <label style={{ ...S.label, marginBottom: 0 }}>Formas de Pagamento</label>
-          <button style={{ ...S.btn('sm'), background: '#b45309' }} onClick={addPagamento}>+ Adicionar</button>
+          <button style={{ ...S.btn('sm'), background: 'var(--warn-bg)' }} onClick={addPagamento}>+ Adicionar</button>
         </div>
         {pagamentos.map((pag, i) => (
-          <div key={i} style={{ background: '#1a1700', borderRadius: 8, padding: 12, marginBottom: 8, border: '1px solid #78350f' }}>
+          <div key={i} style={{ background: 'var(--warn-bg)', borderRadius: 8, padding: 12, marginBottom: 8, border: '1px solid var(--warn-bg)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-              <span style={{ fontSize: 12, color: '#64748b' }}>Pagamento #{i + 1}</span>
+              <span style={{ fontSize: 12, color: 'var(--mut-2)' }}>Pagamento #{i + 1}</span>
               {i > 0 && <button style={S.btn('danger')} onClick={() => removePagamento(i)}>×</button>}
             </div>
             <div style={S.row('1fr 1fr 1fr')}>
@@ -1670,13 +1691,13 @@ function FormVendaFisica({ db, refresh, onClose }) {
               )}
             </div>
             {pag.forma && pag.forma !== 'TROCA' && pag.forma !== 'Dinheiro' && pag.forma !== 'PIX' && pag.valor && (
-              <div style={{ marginTop: 8, padding: '6px 10px', background: '#332b00', borderRadius: 6, fontSize: 12, color: '#fbbf24' }}>
+              <div style={{ marginTop: 8, padding: '6px 10px', background: 'var(--warn-bg)', borderRadius: 6, fontSize: 12, color: 'var(--warn)' }}>
                 Taxa: {getTaxaPercent(pag.forma, pag.parcelas).toFixed(2)}% = {formatMoney(calcTaxa(pag))}
               </div>
             )}
             {pag.forma === 'TROCA' && (
-              <div style={{ marginTop: 12, padding: 12, background: '#1a0505', borderRadius: 8, border: '1px dashed #991b1b' }}>
-                <div style={{ fontSize: 12, color: '#34d399', marginBottom: 10, fontWeight: 600 }}>📱 Aparelho de Troca — entrará no estoque automaticamente</div>
+              <div style={{ marginTop: 12, padding: 12, background: 'var(--danger-bg)', borderRadius: 8, border: '1px dashed var(--danger-bg)' }}>
+                <div style={{ fontSize: 12, color: 'var(--accent-2)', marginBottom: 10, fontWeight: 600 }}>📱 Aparelho de Troca — entrará no estoque automaticamente</div>
                 <div style={S.row('1fr 1fr')}>
                   <div><label style={S.label}>Marca *</label>
                     <select style={S.select} value={pag.trocaMarca || ''} onChange={e => setPagamento(i, 'trocaMarca', e.target.value)}>
@@ -1730,15 +1751,15 @@ function FormVendaFisica({ db, refresh, onClose }) {
         ))}
       </div>
 
-      <div style={{ background: '#0f172a', borderRadius: 10, padding: 16, marginBottom: 16, display: 'flex', gap: 24 }}>
-        <div><span style={{ color: '#64748b', fontSize: 12 }}>Total: </span><span style={{ color: '#34d399', fontWeight: 700 }}>{formatMoney(totalVenda)}</span></div>
-        <div><span style={{ color: '#64748b', fontSize: 12 }}>Taxas: </span><span style={{ color: '#f87171', fontWeight: 700 }}>{formatMoney(totalTaxas)}</span></div>
+      <div style={{ background: 'var(--bg)', borderRadius: 10, padding: 16, marginBottom: 16, display: 'flex', gap: 24 }}>
+        <div><span style={{ color: 'var(--mut-2)', fontSize: 12 }}>Total: </span><span style={{ color: 'var(--accent-2)', fontWeight: 700 }}>{formatMoney(totalVenda)}</span></div>
+        <div><span style={{ color: 'var(--mut-2)', fontSize: 12 }}>Taxas: </span><span style={{ color: 'var(--danger)', fontWeight: 700 }}>{formatMoney(totalTaxas)}</span></div>
       </div>
 
-      {msg && <div style={{ color: '#f87171', fontSize: 13, marginBottom: 12 }}>{msg}</div>}
+      {msg && <div style={{ color: 'var(--danger)', fontSize: 13, marginBottom: 12 }}>{msg}</div>}
       <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 8 }}>
         <button style={S.btn('ghost')} onClick={onClose}>Esconder Aba(Cancelar)</button>
-        <button style={{ ...S.btn(), background: '#1d4ed8' }} onClick={() => salvar(true)} disabled={loading}>{loading ? 'Registrando...' : 'Registrar Venda e Iniciar Nova'}</button>
+        <button style={{ ...S.btn(), background: 'var(--info-strong)' }} onClick={() => salvar(true)} disabled={loading}>{loading ? 'Registrando...' : 'Registrar Venda e Iniciar Nova'}</button>
         <button style={S.btn()} onClick={() => salvar(false)} disabled={loading}>{loading ? 'Registrando...' : 'Registrar Venda e Fechar'}</button>
       </div>
     </div>
@@ -2028,8 +2049,8 @@ function FormVendaOnline({ db, refresh, onClose }) {
         </div>
       </div>
 
-      <div style={{ ...S.card, marginBottom: 16, background: '#0f172a' }}>
-        <div style={{ fontSize: 13, fontWeight: 600, color: '#94a3b8', marginBottom: 12 }}>Dados do Cliente</div>
+      <div style={{ ...S.card, marginBottom: 16, background: 'var(--bg)' }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--mut)', marginBottom: 12 }}>Dados do Cliente</div>
         <div style={S.row('2fr 1fr')}>
           <div style={S.formGroup}><label style={S.label}>Nome *</label><input style={S.input} value={cliente.nome} onChange={e => setCliente(c => ({ ...c, nome: e.target.value }))} /></div>
           <div style={S.formGroup}><label style={S.label}>CPF</label><input style={S.input} value={cliente.cpf} onChange={e => setCliente(c => ({ ...c, cpf: e.target.value }))} placeholder="000.000.000-00" /></div>
@@ -2054,9 +2075,9 @@ function FormVendaOnline({ db, refresh, onClose }) {
           <button style={S.btn('sm')} onClick={addAparelho}>+ Adicionar</button>
         </div>
         {aparelhos.map((ap, i) => (
-          <div key={i} style={{ background: '#0f172a', borderRadius: 8, padding: 12, marginBottom: 8, border: '1px solid #334155' }}>
+          <div key={i} style={{ background: 'var(--bg)', borderRadius: 8, padding: 12, marginBottom: 8, border: '1px solid var(--line)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-              <span style={{ fontSize: 12, color: '#64748b' }}>Aparelho #{i + 1}</span>
+              <span style={{ fontSize: 12, color: 'var(--mut-2)' }}>Aparelho #{i + 1}</span>
               {i > 0 && <button style={S.btn('danger')} onClick={() => removeAparelho(i)}>×</button>}
             </div>
             <div style={S.row('2fr 1fr 1fr')}>
@@ -2079,10 +2100,10 @@ function FormVendaOnline({ db, refresh, onClose }) {
       <div style={{ marginBottom: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
           <label style={{ ...S.label, marginBottom: 0 }}>Acessórios (opcional)</label>
-          <button style={{ ...S.btn('sm'), background: '#7c3aed' }} onClick={addAcessorio}>+ Adicionar</button>
+          <button style={{ ...S.btn('sm'), background: 'var(--purple-strong)' }} onClick={addAcessorio}>+ Adicionar</button>
         </div>
         {acessorios.map((ac, i) => (
-          <div key={i} style={{ background: '#1a1030', borderRadius: 8, padding: 12, marginBottom: 8, border: '1px solid #4c1d95' }}>
+          <div key={i} style={{ background: 'var(--purple-bg)', borderRadius: 8, padding: 12, marginBottom: 8, border: '1px solid var(--purple-bg)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
               <div style={{ display: 'flex', gap: 8 }}>
                 <button style={S.filterBtn(ac.tipo === 'brinde')} onClick={() => setAc(i, 'tipo', 'brinde')}>🎁 Brinde</button>
@@ -2113,12 +2134,12 @@ function FormVendaOnline({ db, refresh, onClose }) {
       <div style={{ marginBottom: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
           <label style={{ ...S.label, marginBottom: 0 }}>Formas de Pagamento</label>
-          <button style={{ ...S.btn('sm'), background: '#b45309' }} onClick={addPagamento}>+ Adicionar</button>
+          <button style={{ ...S.btn('sm'), background: 'var(--warn-bg)' }} onClick={addPagamento}>+ Adicionar</button>
         </div>
         {pagamentos.map((pag, i) => (
-          <div key={i} style={{ background: '#1a1700', borderRadius: 8, padding: 12, marginBottom: 8, border: '1px solid #78350f' }}>
+          <div key={i} style={{ background: 'var(--warn-bg)', borderRadius: 8, padding: 12, marginBottom: 8, border: '1px solid var(--warn-bg)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-              <span style={{ fontSize: 12, color: '#64748b' }}>Pagamento #{i + 1}</span>
+              <span style={{ fontSize: 12, color: 'var(--mut-2)' }}>Pagamento #{i + 1}</span>
               {i > 0 && <button style={S.btn('danger')} onClick={() => removePagamento(i)}>×</button>}
             </div>
             <div style={S.row('1fr 1fr 1fr')}>
@@ -2140,13 +2161,13 @@ function FormVendaOnline({ db, refresh, onClose }) {
               )}
             </div>
             {pag.forma && pag.forma !== 'TROCA' && pag.forma !== 'Dinheiro' && pag.forma !== 'PIX' && pag.valor && (
-              <div style={{ marginTop: 8, padding: '6px 10px', background: '#332b00', borderRadius: 6, fontSize: 12, color: '#fbbf24' }}>
+              <div style={{ marginTop: 8, padding: '6px 10px', background: 'var(--warn-bg)', borderRadius: 6, fontSize: 12, color: 'var(--warn)' }}>
                 Taxa {getTaxaPercent(pag.forma, pag.parcelas).toFixed(2)}% = {formatMoney(calcTaxa(pag))}
               </div>
             )}
             {pag.forma === 'TROCA' && (
-              <div style={{ marginTop: 12, padding: 12, background: '#1a0505', borderRadius: 8, border: '1px dashed #991b1b' }}>
-                <div style={{ fontSize: 12, color: '#34d399', marginBottom: 10, fontWeight: 600 }}>📱 Aparelho de Troca — entrará no estoque automaticamente</div>
+              <div style={{ marginTop: 12, padding: 12, background: 'var(--danger-bg)', borderRadius: 8, border: '1px dashed var(--danger-bg)' }}>
+                <div style={{ fontSize: 12, color: 'var(--accent-2)', marginBottom: 10, fontWeight: 600 }}>📱 Aparelho de Troca — entrará no estoque automaticamente</div>
                 <div style={S.row('1fr 1fr')}>
                   <div><label style={S.label}>Marca *</label>
                     <select style={S.select} value={pag.trocaMarca || ''} onChange={e => setPag(i, 'trocaMarca', e.target.value)}>
@@ -2205,17 +2226,17 @@ function FormVendaOnline({ db, refresh, onClose }) {
         <textarea style={{ ...S.input, minHeight: 80, resize: 'vertical', fontFamily: 'inherit' }} value={form.observacao} onChange={e => setForm(f => ({ ...f, observacao: e.target.value }))} placeholder="Ex: IMEI, detalhes adicionais..." />
       </div>
 
-      <div style={{ background: '#0f172a', borderRadius: 10, padding: 16, marginBottom: 16, display: 'flex', gap: 24 }}>
-        <div><span style={{ color: '#64748b', fontSize: 12 }}>Total: </span><span style={{ color: '#34d399', fontWeight: 700 }}>{formatMoney(totalBruto)}</span></div>
-        <div><span style={{ color: '#64748b', fontSize: 12 }}>Taxas: </span><span style={{ color: '#f87171', fontWeight: 700 }}>{formatMoney(totalTaxas)}</span></div>
+      <div style={{ background: 'var(--bg)', borderRadius: 10, padding: 16, marginBottom: 16, display: 'flex', gap: 24 }}>
+        <div><span style={{ color: 'var(--mut-2)', fontSize: 12 }}>Total: </span><span style={{ color: 'var(--accent-2)', fontWeight: 700 }}>{formatMoney(totalBruto)}</span></div>
+        <div><span style={{ color: 'var(--mut-2)', fontSize: 12 }}>Taxas: </span><span style={{ color: 'var(--danger)', fontWeight: 700 }}>{formatMoney(totalTaxas)}</span></div>
       </div>
 
-      {msg && <div style={{ color: '#f87171', fontSize: 13, marginBottom: 12 }}>{msg}</div>}
+      {msg && <div style={{ color: 'var(--danger)', fontSize: 13, marginBottom: 12 }}>{msg}</div>}
       <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 8 }}>
         <button style={S.btn('ghost')} onClick={onClose}>Esconder Aba(Cancelar)</button>
-        <button style={{ ...S.btn('ghost'), border: '1px solid #1d4ed8', color: '#60a5fa' }} onClick={() => salvarERgerarPDF(false, true)} disabled={loading}>Salvar s/ PDF (Novo)</button>
-        <button style={{ ...S.btn(), background: '#1d4ed8' }} onClick={() => salvarERgerarPDF(true, true)} disabled={loading}>{loading ? 'Processando...' : '📄 PDF e Add Próximo'}</button>
-        <button style={{ ...S.btn('ghost'), border: '1px solid #334155' }} onClick={() => salvarERgerarPDF(false, false)} disabled={loading}>Salvar s/ PDF e Fechar</button>
+        <button style={{ ...S.btn('ghost'), border: '1px solid var(--info-strong)', color: 'var(--info)' }} onClick={() => salvarERgerarPDF(false, true)} disabled={loading}>Salvar s/ PDF (Novo)</button>
+        <button style={{ ...S.btn(), background: 'var(--info-strong)' }} onClick={() => salvarERgerarPDF(true, true)} disabled={loading}>{loading ? 'Processando...' : '📄 PDF e Add Próximo'}</button>
+        <button style={{ ...S.btn('ghost'), border: '1px solid var(--line)' }} onClick={() => salvarERgerarPDF(false, false)} disabled={loading}>Salvar s/ PDF e Fechar</button>
         <button style={S.btn()} onClick={() => salvarERgerarPDF(true, false)} disabled={loading}>{loading ? 'Processando...' : '📄 PDF e Fechar'}</button>
       </div>
     </div>
@@ -2341,9 +2362,9 @@ function FormOrcamento({ db, refresh, onClose }) {
         <div style={S.formGroup}><label style={S.label}>Vendedor</label><input style={S.input} value={form.vendedor} onChange={e => setForm(f => ({ ...f, vendedor: e.target.value }))} /></div>
       </div>
 
-      <div style={{ ...S.card, marginBottom: 16, background: '#1e1b4b', border: '1px solid #4338ca' }}>
+      <div style={{ ...S.card, marginBottom: 16, background: 'var(--purple-bg)', border: '1px solid var(--info-strong)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: empresaPersonalizada.ativo ? 12 : 0 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: '#a5b4fc' }}>Informações da Empresa (Para Simulação / Concorrência)</div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--purple)' }}>Informações da Empresa (Para Simulação / Concorrência)</div>
           <button style={S.btn(empresaPersonalizada.ativo ? 'danger' : 'sm')} onClick={() => setEmpresaPersonalizada(p => ({ ...p, ativo: !p.ativo }))} type="button">
             {empresaPersonalizada.ativo ? '× Remover (Usar Padrão)' : '+ Mudar Empresa'}
           </button>
@@ -2370,8 +2391,8 @@ function FormOrcamento({ db, refresh, onClose }) {
         )}
       </div>
 
-      <div style={{ ...S.card, marginBottom: 16, background: '#0f172a' }}>
-        <div style={{ fontSize: 13, fontWeight: 600, color: '#94a3b8', marginBottom: 12 }}>Dados do Cliente</div>
+      <div style={{ ...S.card, marginBottom: 16, background: 'var(--bg)' }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--mut)', marginBottom: 12 }}>Dados do Cliente</div>
         <div style={S.row('2fr 1fr')}>
           <div style={S.formGroup}><label style={S.label}>Nome *</label><input style={S.input} value={cliente.nome} onChange={e => setCliente(c => ({ ...c, nome: e.target.value }))} /></div>
           <div style={S.formGroup}><label style={S.label}>CPF</label><input style={S.input} value={cliente.cpf} onChange={e => setCliente(c => ({ ...c, cpf: e.target.value }))} placeholder="000.000.000-00" /></div>
@@ -2396,9 +2417,9 @@ function FormOrcamento({ db, refresh, onClose }) {
           <button style={S.btn('sm')} onClick={addItem}>+ Item</button>
         </div>
         {itens.map((it, i) => (
-          <div key={i} style={{ background: '#0f172a', borderRadius: 8, padding: 12, marginBottom: 8, border: '1px solid #334155' }}>
+          <div key={i} style={{ background: 'var(--bg)', borderRadius: 8, padding: 12, marginBottom: 8, border: '1px solid var(--line)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-              <span style={{ fontSize: 12, color: '#64748b' }}>Item #{i + 1}</span>
+              <span style={{ fontSize: 12, color: 'var(--mut-2)' }}>Item #{i + 1}</span>
               {i > 0 && <button style={S.btn('danger')} onClick={() => removeItem(i)}>×</button>}
             </div>
             <div style={S.row('3fr 1fr 1fr 1fr')}>
@@ -2414,12 +2435,12 @@ function FormOrcamento({ db, refresh, onClose }) {
       <div style={{ marginBottom: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
           <label style={{ ...S.label, marginBottom: 0 }}>Opções de Pagamento (informativas)</label>
-          <button style={{ ...S.btn('sm'), background: '#b45309' }} onClick={addPag}>+ Opção</button>
+          <button style={{ ...S.btn('sm'), background: 'var(--warn-bg)' }} onClick={addPag}>+ Opção</button>
         </div>
         {pagamentos.map((pag, i) => (
-          <div key={i} style={{ background: '#1a1700', borderRadius: 8, padding: 12, marginBottom: 8, border: '1px solid #78350f' }}>
+          <div key={i} style={{ background: 'var(--warn-bg)', borderRadius: 8, padding: 12, marginBottom: 8, border: '1px solid var(--warn-bg)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-              <span style={{ fontSize: 12, color: '#64748b' }}>Opção #{i + 1}</span>
+              <span style={{ fontSize: 12, color: 'var(--mut-2)' }}>Opção #{i + 1}</span>
               {i > 0 && <button style={S.btn('danger')} onClick={() => removePag(i)}>×</button>}
             </div>
             <div style={S.row('1fr 1fr 1fr')}>
@@ -2441,15 +2462,15 @@ function FormOrcamento({ db, refresh, onClose }) {
         <textarea style={{ ...S.input, minHeight: 80, resize: 'vertical', fontFamily: 'inherit' }} value={form.observacao} onChange={e => setForm(f => ({ ...f, observacao: e.target.value }))} placeholder="Informações adicionais..." />
       </div>
 
-      <div style={{ background: '#0f172a', borderRadius: 10, padding: 16, marginBottom: 16 }}>
-        <span style={{ color: '#64748b', fontSize: 12 }}>Total do Orçamento: </span>
-        <span style={{ color: '#34d399', fontWeight: 700 }}>{formatMoney(totalBruto)}</span>
+      <div style={{ background: 'var(--bg)', borderRadius: 10, padding: 16, marginBottom: 16 }}>
+        <span style={{ color: 'var(--mut-2)', fontSize: 12 }}>Total do Orçamento: </span>
+        <span style={{ color: 'var(--accent-2)', fontWeight: 700 }}>{formatMoney(totalBruto)}</span>
       </div>
 
-      {msg && <div style={{ color: '#f87171', fontSize: 13, marginBottom: 12 }}>{msg}</div>}
+      {msg && <div style={{ color: 'var(--danger)', fontSize: 13, marginBottom: 12 }}>{msg}</div>}
       <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
         <button style={S.btn('ghost')} onClick={onClose}>Cancelar</button>
-        <button style={{ ...S.btn(), background: '#1d4ed8' }} onClick={() => salvarEGerarPDF(false)} disabled={loading}>Salvar sem PDF</button>
+        <button style={{ ...S.btn(), background: 'var(--info-strong)' }} onClick={() => salvarEGerarPDF(false)} disabled={loading}>Salvar sem PDF</button>
         <button style={S.btn()} onClick={() => salvarEGerarPDF(true)} disabled={loading}>{loading ? 'Processando...' : '📄 Salvar e Gerar PDF'}</button>
       </div>
     </div>
@@ -2487,7 +2508,7 @@ function Configuracoes({ refresh }) {
       titulo: 'Aparelhos',
       desc: 'Apaga todo o cadastro de produtos e unidades em estoque de aparelhos.',
       tables: ['estoque_aparelhos', 'cadastro_aparelhos'],
-      cor: '#3b82f6',
+      cor: 'var(--info)',
     },
     {
       id: 'acessorios',
@@ -2495,7 +2516,7 @@ function Configuracoes({ refresh }) {
       titulo: 'Acessórios',
       desc: 'Apaga todo o cadastro de acessórios e unidades em estoque.',
       tables: ['estoque_acessorios', 'cadastro_acessorios'],
-      cor: '#8b5cf6',
+      cor: 'var(--purple)',
     },
     {
       id: 'vendas',
@@ -2503,7 +2524,7 @@ function Configuracoes({ refresh }) {
       titulo: 'Vendas & Orçamentos',
       desc: 'Apaga todo o histórico de vendas físicas, online e orçamentos.',
       tables: ['vendas'],
-      cor: '#f59e0b',
+      cor: 'var(--warn)',
     },
     {
       id: 'custos',
@@ -2511,7 +2532,7 @@ function Configuracoes({ refresh }) {
       titulo: 'Custos Operacionais',
       desc: 'Apaga todos os registros de custos e despesas.',
       tables: ['custos'],
-      cor: '#10b981',
+      cor: 'var(--accent)',
     },
   ]
 
@@ -2521,21 +2542,21 @@ function Configuracoes({ refresh }) {
       <div style={S.pageSub}>Gerencie e redefina os dados do sistema</div>
 
       {resultado && (
-        <div style={{ background: resultado.ok ? '#064e3b' : '#450a0a', border: `1px solid ${resultado.ok ? '#16a34a' : '#dc2626'}`, borderRadius: 10, padding: '12px 16px', marginBottom: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ color: resultado.ok ? '#34d399' : '#f87171', fontSize: 14, fontWeight: 600 }}>
+        <div style={{ background: resultado.ok ? 'var(--ok-bg)' : 'var(--danger-bg)', border: `1px solid ${resultado.ok ? 'var(--accent)' : 'var(--danger-strong)'}`, borderRadius: 10, padding: '12px 16px', marginBottom: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ color: resultado.ok ? 'var(--accent-2)' : 'var(--danger)', fontSize: 14, fontWeight: 600 }}>
             {resultado.ok ? '✅' : '❌'} {resultado.msg}
           </span>
-          <button style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: 18 }} onClick={() => setResultado(null)}>×</button>
+          <button style={{ background: 'none', border: 'none', color: 'var(--mut-2)', cursor: 'pointer', fontSize: 18 }} onClick={() => setResultado(null)}>×</button>
         </div>
       )}
 
       {/* Reset Geral */}
-      <div style={{ ...S.card, borderTop: '3px solid #dc2626', marginBottom: 28 }}>
+      <div style={{ ...S.card, borderTop: '3px solid var(--danger-strong)', marginBottom: 28 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 20 }}>
           <div>
-            <div style={{ fontSize: 16, fontWeight: 700, color: '#f87171', marginBottom: 6 }}>🚨 Reset Geral</div>
-            <div style={{ fontSize: 13, color: '#94a3b8', lineHeight: 1.6 }}>
-              Apaga <strong style={{ color: '#e2e8f0' }}>TODOS</strong> os dados: aparelhos, acessórios, vendas, orçamentos e custos. <span style={{ color: '#f87171' }}>Ação irreversível.</span>
+            <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--danger)', marginBottom: 6 }}>🚨 Reset Geral</div>
+            <div style={{ fontSize: 13, color: 'var(--mut)', lineHeight: 1.6 }}>
+              Apaga <strong style={{ color: 'var(--txt)' }}>TODOS</strong> os dados: aparelhos, acessórios, vendas, orçamentos e custos. <span style={{ color: 'var(--danger)' }}>Ação irreversível.</span>
             </div>
           </div>
           <button
@@ -2552,12 +2573,12 @@ function Configuracoes({ refresh }) {
       </div>
 
       {/* Reset por Seção */}
-      <div style={{ fontSize: 11, color: '#475569', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 14 }}>Reset por seção</div>
+      <div style={{ fontSize: 11, color: 'var(--mut-2)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 14 }}>Reset por seção</div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
         {secoes.map(s => (
           <div key={s.id} style={{ ...S.card, borderTop: `3px solid ${s.cor}` }}>
-            <div style={{ fontSize: 15, fontWeight: 700, color: '#e2e8f0', marginBottom: 6 }}>{s.icon} {s.titulo}</div>
-            <div style={{ fontSize: 13, color: '#64748b', marginBottom: 18, lineHeight: 1.5 }}>{s.desc}</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--txt)', marginBottom: 6 }}>{s.icon} {s.titulo}</div>
+            <div style={{ fontSize: 13, color: 'var(--mut-2)', marginBottom: 18, lineHeight: 1.5 }}>{s.desc}</div>
             <button
               style={{ ...S.btn('danger'), fontSize: 13 }}
               onClick={() => setResetModal({
@@ -2586,7 +2607,7 @@ function Configuracoes({ refresh }) {
         <div style={S.modal}>
           <div style={{ ...S.modalBox, maxWidth: 300, textAlign: 'center' }}>
             <div style={{ fontSize: 32, marginBottom: 12 }}>⏳</div>
-            <div style={{ color: '#e2e8f0', fontSize: 15, fontWeight: 600 }}>Zerando dados...</div>
+            <div style={{ color: 'var(--txt)', fontSize: 15, fontWeight: 600 }}>Zerando dados...</div>
           </div>
         </div>
       )}
@@ -2605,6 +2626,7 @@ const NAV = [
 
 export default function App() {
   useViewport()
+  const [theme, toggleTheme] = useTheme()
   const [page, setPage] = useState('dashboard')
   const [menuOpen, setMenuOpen] = useState(false)
   const [db, setDb] = useState({ vendas: [], custos: [], cadastro_aparelhos: [], estoque_aparelhos: [], cadastro_acessorios: [], estoque_acessorios: [] })
@@ -2647,7 +2669,14 @@ export default function App() {
       {mobile && (
         <div style={S.topbar}>
           <button style={S.hamburger} onClick={() => setMenuOpen(true)} aria-label="Abrir menu">☰</button>
-          <div style={{ fontSize: 15, fontWeight: 700, color: '#e2e8f0' }}>{pageLabel}</div>
+          <div style={{ fontFamily: 'var(--display)', fontSize: 16, fontWeight: 700, color: 'var(--txt)' }}>{pageLabel}</div>
+          <button
+            style={{ ...S.themeBtn, marginLeft: 'auto' }}
+            onClick={toggleTheme}
+            aria-label={theme === 'dark' ? 'Mudar para tema claro' : 'Mudar para tema escuro'}
+          >
+            {theme === 'dark' ? '☀️' : '🌙'}
+          </button>
         </div>
       )}
 
@@ -2677,15 +2706,21 @@ export default function App() {
             </div>
           ))}
         </div>
-        <div style={{ padding: '12px 16px', borderTop: '1px solid #334155', fontSize: 11, color: '#334155' }}>
-          Sistema v1.0 · Core Distribuidora
+        <div style={{ padding: '12px 16px', borderTop: '1px solid var(--line)' }}>
+          <button style={S.themeToggle} onClick={toggleTheme}>
+            <span>{theme === 'dark' ? '☀️' : '🌙'}</span>
+            {theme === 'dark' ? 'Tema claro' : 'Tema escuro'}
+          </button>
+          <div style={{ fontSize: 11, color: 'var(--mut-2)', marginTop: 10 }}>
+            Sistema v1.0 · Core Distribuidora
+          </div>
         </div>
       </div>
 
       {/* Main Content */}
       <div style={S.main()}>
         {loadingDb ? (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh', color: '#475569' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh', color: 'var(--mut-2)' }}>
             Carregando dados...
           </div>
         ) : (

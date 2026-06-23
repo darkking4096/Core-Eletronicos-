@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CORE — Design Showcase</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --stage-bg:#0b0e14;
+    --stage-grid:rgba(255,255,255,.04);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{max-width:100%}
+  body{
+    font-family:'Inter',system-ui,sans-serif;
+    background:
+      radial-gradient(900px 500px at 20% -10%, rgba(16,185,129,.10), transparent 60%),
+      radial-gradient(900px 500px at 85% 0%, rgba(245,158,11,.10), transparent 55%),
+      var(--stage-bg);
+    color:#e6e9ef;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ---------- Stage header ---------- */
+  .stage-head{
+    max-width:1480px;margin:0 auto;padding:34px 28px 8px;
+  }
+  .eyebrow{
+    font-size:12px;letter-spacing:.28em;text-transform:uppercase;
+    color:#8b93a7;font-weight:600;display:flex;align-items:center;gap:10px;
+  }
+  .eyebrow::before{content:"";width:26px;height:1px;background:linear-gradient(90deg,#10b981,#f59e0b)}
+  .stage-head h1{
+    font-family:'Sora',sans-serif;font-weight:800;font-size:clamp(26px,4vw,40px);
+    letter-spacing:-.02em;margin:14px 0 8px;line-height:1.05;
+    background:linear-gradient(92deg,#fff 30%,#9aa3b5);-webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .stage-head p{color:#9aa3b5;font-size:15px;max-width:680px;line-height:1.6}
+  .legend{display:flex;gap:18px;flex-wrap:wrap;margin-top:18px;font-size:13px;color:#aab2c5}
+  .legend span{display:inline-flex;align-items:center;gap:8px}
+  .dot{width:11px;height:11px;border-radius:50%}
+  .dot.em{background:#10b981;box-shadow:0 0 14px rgba(16,185,129,.7)}
+  .dot.am{background:#f59e0b;box-shadow:0 0 14px rgba(245,158,11,.7)}
+
+  /* ---------- Grid of the two panels ---------- */
+  .stage{
+    max-width:1480px;margin:0 auto;padding:18px 28px 60px;
+    display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start;
+  }
+  @media (max-width:1040px){ .stage{grid-template-columns:1fr} }
+
+  .panel{
+    border-radius:22px;overflow:hidden;position:relative;
+    border:1px solid rgba(255,255,255,.08);
+    background:rgba(255,255,255,.02);
+    box-shadow:0 30px 80px -30px rgba(0,0,0,.7);
+  }
+  .panel-bar{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:13px 16px;background:rgba(10,12,18,.6);backdrop-filter:blur(8px);
+    border-bottom:1px solid rgba(255,255,255,.07);
+  }
+  .panel-id{display:flex;align-items:center;gap:11px;font-size:13px;color:#c4cad6;font-weight:600}
+  .swatch{width:14px;height:14px;border-radius:5px}
+  .va .swatch{background:#10b981;box-shadow:0 0 12px rgba(16,185,129,.6)}
+  .vb .swatch{background:#f59e0b;box-shadow:0 0 12px rgba(245,158,11,.6)}
+  .panel-id small{color:#727a8c;font-weight:500}
+
+  .toggle{
+    display:inline-flex;align-items:center;gap:7px;cursor:pointer;
+    background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
+    border-radius:999px;padding:5px 7px;user-select:none;
+  }
+  .toggle .seg{font-size:11px;font-weight:600;color:#8b93a7;padding:3px 9px;border-radius:999px;transition:.25s}
+  .toggle .seg.on{color:#0b0e14;background:#fff}
+  .va .toggle .seg.on{background:#10b981;color:#04130d}
+  .vb .toggle .seg.on{background:#f59e0b;color:#1a1304}
+
+  /* ====================================================================
+     APP MOCKUP — themed via [data-theme] + variation class
+     ==================================================================== */
+  .app{
+    --r:16px;
+    display:grid;grid-template-columns:212px 1fr;min-height:660px;
+    font-size:14px;transition:background .4s,color .4s;
+  }
+  /* ----- VARIATION A : EMERALD ----- */
+  .va .app{
+    --accent:#10b981;--accent-2:#34d399;--accent-soft:rgba(16,185,129,.12);
+    --display:'Sora';--r:18px;
+  }
+  .va .app[data-theme="dark"]{
+    --bg:#0c1117;--panel:#141b24;--panel-2:#0f161e;--line:rgba(255,255,255,.07);
+    --txt:#e7ecf3;--mut:#8a94a6;--sidebar:#0a0f15;
+  }
+  .va .app[data-theme="light"]{
+    --bg:#f3f6f4;--panel:#ffffff;--panel-2:#f7faf8;--line:rgba(2,30,20,.08);
+    --txt:#0f2018;--mut:#5d6b63;--sidebar:#ffffff;
+  }
+  /* ----- VARIATION B : AMBER ----- */
+  .vb .app{
+    --accent:#f59e0b;--accent-2:#fbbf24;--accent-soft:rgba(245,158,11,.13);
+    --display:'Space Grotesk';--r:12px;
+  }
+  .vb .app[data-theme="dark"]{
+    --bg:#100d08;--panel:#1c170f;--panel-2:#15110a;--line:rgba(255,255,255,.08);
+    --txt:#f1ece2;--mut:#a3947e;--sidebar:#0d0a05;
+  }
+  .vb .app[data-theme="light"]{
+    --bg:#faf6ef;--panel:#ffffff;--panel-2:#fbf7f0;--line:rgba(40,28,4,.09);
+    --txt:#221a0c;--mut:#6f6451;--sidebar:#fffdf9;
+  }
+
+  .app{background:var(--bg);color:var(--txt)}
+
+  /* ----- Sidebar ----- */
+  .side{
+    background:var(--sidebar);border-right:1px solid var(--line);
+    padding:18px 14px;display:flex;flex-direction:column;gap:4px;
+  }
+  .brand{display:flex;align-items:center;gap:10px;padding:6px 8px 16px}
+  .brand .mark{
+    width:34px;height:34px;border-radius:10px;display:grid;place-items:center;
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    color:#06140e;font-family:var(--display),sans-serif;font-weight:800;font-size:17px;
+    box-shadow:0 8px 20px -8px var(--accent);
+  }
+  .vb .brand .mark{color:#1c1304}
+  .brand b{font-family:var(--display),sans-serif;font-size:16px;letter-spacing:-.01em}
+  .brand span{display:block;font-size:10px;color:var(--mut);letter-spacing:.16em;text-transform:uppercase;font-weight:600}
+  .nav-label{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--mut);padding:14px 10px 6px;font-weight:600}
+  .nav a{
+    display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:11px;
+    color:var(--mut);text-decoration:none;font-weight:500;font-size:13.5px;
+    position:relative;transition:background .18s,color .18s,transform .18s;
+  }
+  .nav a svg{width:17px;height:17px;flex:none;stroke-width:1.9}
+  .nav a:hover{background:var(--accent-soft);color:var(--txt);transform:translateX(2px)}
+  .nav a.active{background:var(--accent-soft);color:var(--txt);font-weight:600}
+  .nav a.active::before{
+    content:"";position:absolute;left:-14px;top:50%;transform:translateY(-50%);
+    width:3px;height:20px;border-radius:0 4px 4px 0;background:var(--accent);
+  }
+  .side-foot{margin-top:auto;display:flex;align-items:center;gap:10px;padding:10px;border-top:1px solid var(--line)}
+  .ava{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:grid;place-items:center;color:#06140e;font-weight:700;font-size:13px}
+  .vb .ava{color:#1c1304}
+  .side-foot small{display:block;color:var(--mut);font-size:11px}
+
+  /* ----- Main ----- */
+  .main{padding:20px 22px 26px;overflow:hidden}
+  .topbar{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;margin-bottom:20px;flex-wrap:wrap}
+  .topbar h2{font-family:var(--display),sans-serif;font-size:23px;letter-spacing:-.02em;font-weight:700}
+  .topbar .sub{color:var(--mut);font-size:12.5px;margin-top:3px}
+  .top-actions{display:flex;align-items:center;gap:10px}
+  .search{
+    display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--line);
+    border-radius:11px;padding:8px 12px;color:var(--mut);font-size:12.5px;min-width:150px;
+  }
+  .search svg{width:14px;height:14px}
+  .btn-accent{
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));border:none;cursor:pointer;
+    color:#06140e;font-weight:700;font-size:12.5px;padding:9px 15px;border-radius:11px;
+    display:inline-flex;align-items:center;gap:7px;box-shadow:0 10px 22px -10px var(--accent);transition:transform .18s,box-shadow .18s;
+  }
+  .vb .btn-accent{color:#1c1304}
+  .btn-accent:hover{transform:translateY(-2px);box-shadow:0 16px 28px -10px var(--accent)}
+  .btn-accent svg{width:14px;height:14px;stroke-width:2.4}
+
+  /* ----- KPI cards ----- */
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin-bottom:18px}
+  @media (max-width:560px){ .kpis{grid-template-columns:1fr 1fr} }
+  .kpi{
+    background:var(--panel);border:1px solid var(--line);border-radius:var(--r);
+    padding:15px 16px;position:relative;overflow:hidden;transition:transform .2s,box-shadow .2s,border-color .2s;
+  }
+  .kpi:hover{transform:translateY(-4px);box-shadow:0 22px 40px -24px rgba(0,0,0,.6);border-color:var(--accent)}
+  .kpi .lab{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);font-weight:600;display:flex;align-items:center;gap:7px}
+  .kpi .ic{width:24px;height:24px;border-radius:8px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent)}
+  .kpi .ic svg{width:13px;height:13px;stroke-width:2}
+  .kpi .val{font-family:var(--display),sans-serif;font-size:24px;font-weight:700;letter-spacing:-.02em;margin:11px 0 4px}
+  .vb .kpi .val{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:22px}
+  .chip{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:2px 7px;border-radius:999px}
+  .chip.up{color:var(--accent-2);background:var(--accent-soft)}
+  .chip.down{color:#f87171;background:rgba(248,113,113,.12)}
+  .chip svg{width:11px;height:11px;stroke-width:2.4}
+  .kpi .spark{position:absolute;right:12px;bottom:10px;width:64px;height:26px;opacity:.9}
+
+  /* ----- Charts row ----- */
+  .charts{display:grid;grid-template-columns:1.7fr 1fr;gap:13px;margin-bottom:18px}
+  @media (max-width:560px){ .charts{grid-template-columns:1fr} }
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px}
+  .card-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+  .card-h b{font-family:var(--display),sans-serif;font-size:14.5px;font-weight:600}
+  .card-h small{color:var(--mut);font-size:11.5px}
+  .pill-tabs{display:flex;gap:4px;background:var(--panel-2);border:1px solid var(--line);border-radius:9px;padding:3px}
+  .pill-tabs button{border:none;background:none;cursor:pointer;font-size:11px;font-weight:600;color:var(--mut);padding:4px 9px;border-radius:7px;font-family:inherit}
+  .pill-tabs button.on{background:var(--accent);color:#06140e}
+  .vb .pill-tabs button.on{color:#1c1304}
+  .legend2{display:flex;gap:14px;margin-top:10px;font-size:11.5px;color:var(--mut)}
+  .legend2 i{width:9px;height:9px;border-radius:3px;display:inline-block;margin-right:6px;vertical-align:middle}
+
+  .donut-wrap{display:flex;align-items:center;gap:18px}
+  .donut-center{position:relative}
+  .donut-center .mid{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
+  .donut-center .mid b{font-family:var(--display),sans-serif;font-size:18px}
+  .donut-center .mid small{display:block;color:var(--mut);font-size:10px;letter-spacing:.08em;text-transform:uppercase}
+  .donut-legend{display:flex;flex-direction:column;gap:9px;font-size:12px;flex:1}
+  .donut-legend .row{display:flex;align-items:center;justify-content:space-between}
+  .donut-legend .row span{display:flex;align-items:center;gap:8px;color:var(--mut)}
+  .donut-legend .row b{font-variant-numeric:tabular-nums}
+  .donut-legend i{width:9px;height:9px;border-radius:3px}
+
+  /* ----- Table ----- */
+  .tbl-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+  .tbl-head b{font-family:var(--display),sans-serif;font-size:14.5px}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th{text-align:left;color:var(--mut);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;padding:0 8px 10px}
+  td{padding:11px 8px;border-top:1px solid var(--line)}
+  tbody tr{transition:background .15s}
+  tbody tr:hover{background:var(--accent-soft)}
+  .prod{display:flex;align-items:center;gap:10px}
+  .prod .ph{width:30px;height:30px;border-radius:8px;background:var(--panel-2);border:1px solid var(--line);display:grid;place-items:center;font-size:13px}
+  .prod small{display:block;color:var(--mut);font-size:10.5px}
+  .tag{font-size:10.5px;font-weight:600;padding:3px 9px;border-radius:999px}
+  .tag.ok{color:var(--accent-2);background:var(--accent-soft)}
+  .tag.wait{color:#fbbf24;background:rgba(251,191,36,.14)}
+  .money{font-weight:700;font-variant-numeric:tabular-nums}
+  .vb .money{font-family:'JetBrains Mono',monospace}
+  .lucro{color:var(--accent-2);font-weight:700;font-variant-numeric:tabular-nums}
+  .vb .lucro{font-family:'JetBrains Mono',monospace}
+
+  /* reveal animation */
+  .reveal{opacity:0;transform:translateY(10px);animation:rise .6s cubic-bezier(.2,.7,.3,1) forwards}
+  @keyframes rise{to{opacity:1;transform:none}}
+  .draw{stroke-dasharray:1000;stroke-dashoffset:1000;animation:draw 1.6s ease forwards .25s}
+  @keyframes draw{to{stroke-dashoffset:0}}
+  @media (prefers-reduced-motion:reduce){.reveal,.draw{animation:none;opacity:1;transform:none;stroke-dashoffset:0}}
+
+  .foot{max-width:1480px;margin:0 auto;padding:0 28px 50px;color:#6f7689;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+
+<header class="stage-head">
+  <div class="eyebrow">Core Distribuidora · Sistema interno</div>
+  <h1>Dois caminhos de design para o CORE</h1>
+  <p>Mesmo dashboard, duas identidades. Cada painel alterna entre claro e escuro de forma independente — passe o mouse nos cards, abra os menus e compare. Escolha a direção e eu aplico no app real.</p>
+  <div class="legend">
+    <span><i class="dot em"></i> Variação A — Esmeralda · Sora + Inter · cantos suaves</span>
+    <span><i class="dot am"></i> Variação B — Âmbar · Space Grotesk + JetBrains Mono · editorial</span>
+  </div>
+</header>
+
+<main class="stage">
+
+  <!-- ============ PANEL A : EMERALD ============ -->
+  <section class="panel va">
+    <div class="panel-bar">
+      <div class="panel-id"><span class="swatch"></span> Variação A — Esmeralda <small>#10B981</small></div>
+      <div class="toggle" data-target="appA">
+        <span class="seg" data-mode="light">Claro</span>
+        <span class="seg on" data-mode="dark">Escuro</span>
+      </div>
+    </div>
+    <div class="app" id="appA" data-theme="dark"></div>
+  </section>
+
+  <!-- ============ PANEL B : AMBER ============ -->
+  <section class="panel vb">
+    <div class="panel-bar">
+      <div class="panel-id"><span class="swatch"></span> Variação B — Âmbar <small>#F59E0B</small></div>
+      <div class="toggle" data-target="appB">
+        <span class="seg on" data-mode="light">Claro</span>
+        <span class="seg" data-mode="dark">Escuro</span>
+      </div>
+    </div>
+    <div class="app" id="appB" data-theme="light"></div>
+  </section>
+
+</main>
+
+<p class="foot">CORE — Design Showcase · gerado para Pedro · 23 jun 2026</p>
+
+<script>
+/* ---------- icon set (feather-style, stroke=currentColor) ---------- */
+const I = {
+  grid:'<path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/>',
+  cart:'<circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/>',
+  doc:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/>',
+  phone:'<rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/>',
+  plug:'<path d="M9 2v6M15 2v6M6 8h12v3a6 6 0 0 1-12 0z"/><path d="M12 17v5"/>',
+  coin:'<circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.5h4a1.5 1.5 0 0 1 0 3h-3a1.5 1.5 0 0 0 0 3h4"/>',
+  chart:'<path d="M3 3v18h18"/><path d="M7 14l3-3 3 3 4-5"/>',
+  gear:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.81 1.17V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 8 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 14H4.5a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 6 8.6a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 11 4.6h.09A1.65 1.65 0 0 0 12 3.09V3a2 2 0 1 1 4 0v.09A1.65 1.65 0 0 0 17 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 21 11h.09a2 2 0 1 1 0 4z"/>',
+  search:'<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  up:'<path d="M7 17L17 7M9 7h8v8"/>',
+  down:'<path d="M17 7L7 17M15 17H7V9"/>',
+  wallet:'<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M16 14h2"/>',
+  trend:'<path d="M3 17l6-6 4 4 7-7"/><path d="M17 8h4v4"/>',
+};
+const icon = (n,cls='') => `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">${I[n]}</svg>`;
+
+/* ---------- data ---------- */
+const nav = [
+  ['grid','Dashboard',true],['cart','Vendas',false],['doc','Orçamentos',false],
+  ['phone','Aparelhos',false],['plug','Acessórios',false],['coin','Custos',false],
+  ['chart','Relatórios',false],['gear','Configurações',false],
+];
+const kpis = [
+  ['cart','Vendas no Período','128', 0,128, '+12%','up','Junho · 23 dias'],
+  ['trend','Lucro por Venda','R$ 18.430', 0,18430,'+8,4%','up','Sem custos op.'],
+  ['wallet','Custos Operacionais','R$ 6.200', 0,6200,'-3,1%','down','Aluguel, energia…'],
+  ['coin','Lucro Real','R$ 12.230', 0,12230,'+15%','up','Lucro − custos'],
+];
+const sparks = [
+  [6,9,7,11,10,14,13,17],
+  [5,7,6,9,8,11,12,15],
+  [9,8,9,7,8,6,7,6],
+  [4,6,5,8,9,11,13,16],
+];
+const vendas = [
+  ['📱','iPhone 13 128GB','Seminovo · Apple','PIX','R$ 2.850','R$ 540','ok','Pago'],
+  ['📱','Galaxy S23 256GB','Novo · Samsung','Crédito 3x','R$ 3.120','R$ 410','ok','Pago'],
+  ['🎧','JBL Tune 520BT','Novo · JBL','Débito','R$ 249','R$ 78','ok','Pago'],
+  ['📱','Redmi Note 12','Novo · Xiaomi','Dinheiro','R$ 1.190','R$ 230','wait','Reserva'],
+  ['💻','MacBook Air M2','Seminovo · Apple','PIX QR','R$ 6.400','R$ 920','ok','Pago'],
+];
+const gastos = [
+  ['Aluguel',40,'var(--accent)'],
+  ['Salários',28,'color-mix(in srgb, var(--accent) 60%, #888)'],
+  ['Energia',22,'color-mix(in srgb, var(--accent) 35%, #bbb)'],
+  ['Outros',10,'color-mix(in srgb, var(--accent) 18%, #ddd)'],
+];
+
+/* ---------- spark path ---------- */
+function sparkPath(arr){
+  const w=64,h=26,mx=Math.max(...arr),mn=Math.min(...arr),rng=(mx-mn)||1;
+  return arr.map((v,i)=>{const x=(i/(arr.length-1))*w;const y=h-2-((v-mn)/rng)*(h-4);return `${i?'L':'M'}${x.toFixed(1)},${y.toFixed(1)}`}).join(' ');
+}
+
+/* ---------- area chart ---------- */
+function areaChart(){
+  const fat=[22,28,25,34,31,38], cus=[8,9,7,10,9,11];
+  const W=320,H=132,t=12,b=116,vmax=40;
+  const X=i=>16+i*((W-32)/5);
+  const Y=v=>b-(v/vmax)*(b-t);
+  const line=a=>a.map((v,i)=>`${i?'L':'M'}${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(' ');
+  const area=`${line(fat)} L${X(5).toFixed(1)},${b} L${X(0).toFixed(1)},${b} Z`;
+  const months=['Jan','Fev','Mar','Abr','Mai','Jun'];
+  const ticks=months.map((m,i)=>`<text x="${X(i).toFixed(1)}" y="128" fill="var(--mut)" font-size="9" text-anchor="middle">${m}</text>`).join('');
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" preserveAspectRatio="none" style="height:160px">
+    <defs>
+      <linearGradient id="ag" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="var(--accent)" stop-opacity=".28"/>
+        <stop offset="1" stop-color="var(--accent)" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+    ${[0,1,2,3].map(i=>`<line x1="16" x2="304" y1="${t+i*((b-t)/3)}" y2="${t+i*((b-t)/3)}" stroke="var(--line)"/>`).join('')}
+    <path d="${area}" fill="url(#ag)"/>
+    <path class="draw" d="${line(cus)}" fill="none" stroke="var(--mut)" stroke-width="2" stroke-dasharray="4 4" opacity=".6"/>
+    <path class="draw" d="${line(fat)}" fill="none" stroke="var(--accent)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+    ${fat.map((v,i)=>`<circle cx="${X(i).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="3" fill="var(--panel)" stroke="var(--accent)" stroke-width="2"/>`).join('')}
+    ${ticks}
+  </svg>`;
+}
+
+/* ---------- donut ---------- */
+function donut(){
+  const r=46,c=2*Math.PI*r;let off=0;
+  const segs=gastos.map(([,p,col])=>{const len=(p/100)*c;const s=`<circle cx="60" cy="60" r="${r}" fill="none" stroke="${col}" stroke-width="14" stroke-dasharray="${len.toFixed(2)} ${(c-len).toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}" transform="rotate(-90 60 60)" stroke-linecap="butt"/>`;off+=len;return s}).join('');
+  return `<div class="donut-center" style="width:120px;height:120px">
+      <svg viewBox="0 0 120 120" width="120" height="120">${segs}</svg>
+      <div class="mid"><div><b>R$ 6,2k</b><small>Total mês</small></div></div>
+    </div>`;
+}
+
+/* ---------- build one app ---------- */
+function buildApp(el){
+  const navHtml = nav.map(([ic,label,active])=>`<a href="#" class="${active?'active':''}">${icon(ic)}${label}</a>`).join('');
+  const kpiHtml = kpis.map(([ic,lab,val,,,chip,dir,sub],idx)=>`
+    <div class="kpi reveal" style="animation-delay:${idx*70}ms">
+      <div class="lab"><span class="ic">${icon(ic)}</span>${lab}</div>
+      <div class="val" data-count="${val}">${val}</div>
+      <span class="chip ${dir}">${icon(dir==='up'?'up':'down')}${chip}</span>
+      <svg class="spark" viewBox="0 0 64 26" fill="none"><path d="${sparkPath(sparks[idx])}" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>`).join('');
+  const rows = vendas.map(([emo,name,meta,pay,val,luc,tag,tagl])=>`
+    <tr>
+      <td><div class="prod"><div class="ph">${emo}</div><div>${name}<small>${meta}</small></div></div></td>
+      <td style="color:var(--mut)">${pay}</td>
+      <td class="money">${val}</td>
+      <td class="lucro">${luc}</td>
+      <td><span class="tag ${tag}">${tagl}</span></td>
+    </tr>`).join('');
+  const legendDonut = gastos.map(([n,p,col])=>`<div class="row"><span><i style="background:${col}"></i>${n}</span><b>${p}%</b></div>`).join('');
+
+  el.innerHTML = `
+    <aside class="side">
+      <div class="brand">
+        <div class="mark">C</div>
+        <div><b>CORE</b><span>Distribuidora</span></div>
+      </div>
+      <div class="nav-label">Operação</div>
+      <nav class="nav">${navHtml}</nav>
+      <div class="side-foot">
+        <div class="ava">P</div>
+        <div><b style="font-size:12.5px">Pedro Dias</b><small>Administrador</small></div>
+      </div>
+    </aside>
+
+    <div class="main">
+      <div class="topbar">
+        <div>
+          <h2>Dashboard</h2>
+          <div class="sub">Resumo de hoje · terça, 23 de junho de 2026</div>
+        </div>
+        <div class="top-actions">
+          <div class="search">${icon('search')} Buscar venda…</div>
+          <button class="btn-accent">${icon('plus')} Nova venda</button>
+        </div>
+      </div>
+
+      <div class="kpis">${kpiHtml}</div>
+
+      <div class="charts">
+        <div class="card reveal" style="animation-delay:240ms">
+          <div class="card-h">
+            <div><b>Faturamento × Custos</b><br><small>Últimos 6 meses</small></div>
+            <div class="pill-tabs"><button>Semana</button><button class="on">Mês</button><button>Ano</button></div>
+          </div>
+          ${areaChart()}
+          <div class="legend2">
+            <span><i style="background:var(--accent)"></i>Faturamento</span>
+            <span><i style="background:var(--mut)"></i>Custos</span>
+          </div>
+        </div>
+        <div class="card reveal" style="animation-delay:300ms">
+          <div class="card-h"><div><b>Gastos por tipo</b><br><small>Junho 2026</small></div></div>
+          <div class="donut-wrap">
+            ${donut()}
+            <div class="donut-legend">${legendDonut}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card reveal" style="animation-delay:360ms">
+        <div class="tbl-head"><b>Vendas recentes</b><small style="color:var(--mut)">5 de 128</small></div>
+        <table>
+          <thead><tr><th>Produto</th><th>Pagamento</th><th>Valor</th><th>Lucro</th><th>Status</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>`;
+
+  // count-up animation for numeric-ish KPIs
+  el.querySelectorAll('.val').forEach(node=>{
+    const raw=node.dataset.count;
+    const num=parseInt(raw.replace(/\D/g,''),10);
+    if(!num || num<10){return;}
+    const prefix=raw.startsWith('R$')?'R$ ':'';
+    const dur=900, t0=performance.now();
+    function step(now){
+      const p=Math.min(1,(now-t0)/dur);
+      const e=1-Math.pow(1-p,3);
+      const cur=Math.round(num*e);
+      node.textContent= prefix + cur.toLocaleString('pt-BR');
+      if(p<1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  });
+}
+
+buildApp(document.getElementById('appA'));
+buildApp(document.getElementById('appB'));
+
+/* ---------- theme toggles ---------- */
+document.querySelectorAll('.toggle').forEach(tg=>{
+  const app=document.getElementById(tg.dataset.target);
+  tg.querySelectorAll('.seg').forEach(seg=>{
+    seg.addEventListener('click',()=>{
+      tg.querySelectorAll('.seg').forEach(s=>s.classList.remove('on'));
+      seg.classList.add('on');
+      app.setAttribute('data-theme',seg.dataset.mode);
+    });
+  });
+});
+</script>
+</body>
+</html>
