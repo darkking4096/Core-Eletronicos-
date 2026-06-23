@@ -5,6 +5,35 @@ import { TIPOS_CUSTO, CATEGORIAS_CUSTO, TIPOS_ACESSORIO, FORMAS_PAGAMENTO, MARCA
 import { obterGarantia, calcGarantiaDate } from './utils/garantias.js'
 import { gerarHTMLRecibo, gerarPDF } from './utils/pdfTemplates.js'
 
+// ─────────────────────────────────────────────
+// RESPONSIVIDADE
+// Breakpoint mobile: < 768px. VW é uma variável de módulo
+// mantida atualizada pelo hook useViewport (chamado no App),
+// que força re-render em toda a árvore no resize. Assim os
+// estilos inline (S.row, S.sidebar, etc.) podem ler isMobile()
+// durante a renderização e se adaptar ao tamanho da tela.
+// ─────────────────────────────────────────────
+const MOBILE_BREAKPOINT = 768 // px
+let VW = typeof window !== 'undefined' ? window.innerWidth : 1024
+const isMobile = () => VW < MOBILE_BREAKPOINT
+
+export function useViewport() {
+  const [, force] = useState(0)
+  useEffect(() => {
+    let raf = null
+    const onResize = () => {
+      if (raf) return
+      raf = requestAnimationFrame(() => {
+        raf = null
+        VW = window.innerWidth
+        force(n => n + 1)
+      })
+    }
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
+}
+
 export function useSessionState(key, initialValue) {
   const [state, setState] = useState(() => {
     try {
@@ -32,7 +61,18 @@ export function useSessionState(key, initialValue) {
 // ─────────────────────────────────────────────
 const S = {
   app: { display: 'flex', minHeight: '100vh', background: '#0f172a' },
-  sidebar: { width: 220, background: '#1e293b', borderRight: '1px solid #334155', display: 'flex', flexDirection: 'column', position: 'fixed', top: 0, left: 0, height: '100vh', zIndex: 100 },
+  sidebar: (open) => ({
+    width: 220, background: '#1e293b', borderRight: '1px solid #334155',
+    display: 'flex', flexDirection: 'column', position: 'fixed', top: 0, left: 0,
+    height: '100vh', zIndex: 100,
+    transition: 'transform 0.25s ease',
+    transform: isMobile() && !open ? 'translateX(-100%)' : 'translateX(0)',
+    boxShadow: isMobile() && open ? '4px 0 24px rgba(0,0,0,0.5)' : 'none',
+  }),
+  // Barra superior fixa, visível apenas no mobile
+  topbar: { display: 'flex', alignItems: 'center', gap: 12, position: 'fixed', top: 0, left: 0, right: 0, height: 56, background: '#1e293b', borderBottom: '1px solid #334155', padding: '0 16px', zIndex: 90 },
+  hamburger: { background: 'none', border: 'none', color: '#e2e8f0', fontSize: 24, cursor: 'pointer', lineHeight: 1, padding: 4 },
+  overlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 99 },
   sidebarLogo: { padding: '20px 16px 16px', borderBottom: '1px solid #334155' },
   logoTitle: { fontSize: 16, fontWeight: 700, color: '#e94560', letterSpacing: 1 },
   logoSub: { fontSize: 11, color: '#64748b', marginTop: 2 },
@@ -40,7 +80,7 @@ const S = {
   navGroup: { marginBottom: 4 },
   navGroupLabel: { fontSize: 10, color: '#475569', fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', padding: '8px 16px 4px' },
   navItem: (active) => ({ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 16px', cursor: 'pointer', borderLeft: `3px solid ${active ? '#e94560' : 'transparent'}`, background: active ? '#0f172a' : 'transparent', color: active ? '#e2e8f0' : '#94a3b8', fontSize: 13, fontWeight: active ? 600 : 400, transition: 'all 0.15s' }),
-  main: { marginLeft: 220, flex: 1, padding: 24, minHeight: '100vh' },
+  main: () => ({ marginLeft: isMobile() ? 0 : 220, flex: 1, padding: isMobile() ? '72px 14px 24px' : 24, minHeight: '100vh', width: '100%', minWidth: 0 }),
   pageTitle: { fontSize: 22, fontWeight: 700, color: '#e2e8f0', marginBottom: 4 },
   pageSub: { fontSize: 13, color: '#64748b', marginBottom: 20 },
   card: { background: '#1e293b', borderRadius: 12, padding: 20, border: '1px solid #334155' },
@@ -61,7 +101,7 @@ const S = {
   select: { width: '100%', padding: '10px 12px', background: '#0f172a', border: '1.5px solid #334155', borderRadius: 8, color: '#e2e8f0', fontSize: 14, outline: 'none' },
   label: { display: 'block', fontSize: 12, color: '#94a3b8', marginBottom: 6, fontWeight: 500 },
   formGroup: { marginBottom: 16 },
-  row: (cols) => ({ display: 'grid', gridTemplateColumns: cols || '1fr 1fr', gap: 14, marginBottom: 0 }),
+  row: (cols) => ({ display: 'grid', gridTemplateColumns: isMobile() ? '1fr' : (cols || '1fr 1fr'), gap: 14, marginBottom: 0 }),
   table: { width: '100%', borderCollapse: 'collapse', fontSize: 13 },
   th: { padding: '10px 12px', background: '#0f172a', color: '#94a3b8', textAlign: 'left', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5, borderBottom: '1px solid #334155', cursor: 'pointer', userSelect: 'none' },
   td: { padding: '10px 12px', borderBottom: '1px solid #1e293b', color: '#cbd5e1', fontSize: 13 },
@@ -402,7 +442,7 @@ function Dashboard({ db }) {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile() ? '1fr' : '1fr 1fr', gap: 16, marginBottom: 24 }}>
         <div style={S.card}>
           <div style={{ fontSize: 14, fontWeight: 700, color: '#e2e8f0', marginBottom: 14 }}>Investimentos no Período</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -580,7 +620,7 @@ function EstoqueAparelhos({ db, refresh }) {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
         <div>
           <div style={S.pageTitle}>Estoque de Aparelhos</div>
           <div style={S.pageSub}>Cadastro e controle de unidades</div>
@@ -820,7 +860,7 @@ function EstoqueAcessorios({ db, refresh }) {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
         <div>
           <div style={S.pageTitle}>Estoque de Acessórios</div>
           <div style={S.pageSub}>Cadastro e entradas de acessórios</div>
@@ -984,7 +1024,7 @@ function Custos({ db, refresh }) {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
         <div>
           <div style={S.pageTitle}>Custos</div>
           <div style={S.pageSub}>Controle de despesas operacionais</div>
@@ -1266,7 +1306,7 @@ function Vendas({ db, refresh }) {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
         <div>
           <div style={S.pageTitle}>Vendas</div>
           <div style={S.pageSub}>Registro e histórico de vendas</div>
@@ -2564,7 +2604,9 @@ const NAV = [
 ]
 
 export default function App() {
+  useViewport()
   const [page, setPage] = useState('dashboard')
+  const [menuOpen, setMenuOpen] = useState(false)
   const [db, setDb] = useState({ vendas: [], custos: [], cadastro_aparelhos: [], estoque_aparelhos: [], cadastro_acessorios: [], estoque_acessorios: [] })
   const [loadingDb, setLoadingDb] = useState(true)
 
@@ -2595,21 +2637,42 @@ export default function App() {
 
   // Agrupar nav
   const groups = [...new Set(NAV.map(n => n.group))]
+  const mobile = isMobile()
+  const pageLabel = (NAV.find(n => n.id === page) || {}).label || 'CORE'
+  const go = (id) => { setPage(id); setMenuOpen(false) }
 
   return (
     <div style={S.app}>
-      {/* Sidebar */}
-      <div style={S.sidebar}>
-        <div style={S.sidebarLogo}>
-          <div style={S.logoTitle}>CORE</div>
-          <div style={S.logoSub}>Distribuidora Eletrônicos</div>
+      {/* Barra superior (apenas mobile) */}
+      {mobile && (
+        <div style={S.topbar}>
+          <button style={S.hamburger} onClick={() => setMenuOpen(true)} aria-label="Abrir menu">☰</button>
+          <div style={{ fontSize: 15, fontWeight: 700, color: '#e2e8f0' }}>{pageLabel}</div>
+        </div>
+      )}
+
+      {/* Overlay do drawer (apenas mobile, com menu aberto) */}
+      {mobile && menuOpen && (
+        <div style={S.overlay} onClick={() => setMenuOpen(false)} />
+      )}
+
+      {/* Sidebar / Drawer */}
+      <div style={S.sidebar(menuOpen)}>
+        <div style={{ ...S.sidebarLogo, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div>
+            <div style={S.logoTitle}>CORE</div>
+            <div style={S.logoSub}>Distribuidora Eletrônicos</div>
+          </div>
+          {mobile && (
+            <button style={{ ...S.hamburger, fontSize: 22 }} onClick={() => setMenuOpen(false)} aria-label="Fechar menu">×</button>
+          )}
         </div>
         <div style={S.navList}>
           {groups.map(g => (
             <div key={g} style={S.navGroup}>
               <div style={S.navGroupLabel}>{g}</div>
               {NAV.filter(n => n.group === g).map(n => (
-                <div key={n.id} style={S.navItem(page === n.id)} onClick={() => setPage(n.id)}>{n.label}</div>
+                <div key={n.id} style={S.navItem(page === n.id)} onClick={() => go(n.id)}>{n.label}</div>
               ))}
             </div>
           ))}
@@ -2620,7 +2683,7 @@ export default function App() {
       </div>
 
       {/* Main Content */}
-      <div style={S.main}>
+      <div style={S.main()}>
         {loadingDb ? (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh', color: '#475569' }}>
             Carregando dados...
