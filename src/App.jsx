@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { supabase } from './lib/supabase.js'
+import { supabase } from './lib/supabase.js'h
 import { formatMoney, parseMoney, formatDate, today, daysAgo, genId } from './utils/formatters.js'
 import { TIPOS_CUSTO, CATEGORIAS_CUSTO, TIPOS_ACESSORIO, FORMAS_PAGAMENTO, MARCAS_TROCA, CAPACIDADES, MARCAS_APARELHO, TIPO_VENDA, getTaxaPercent } from './utils/constants.js'
 import { obterGarantia, calcGarantiaDate } from './utils/garantias.js'
@@ -74,18 +74,18 @@ const S = {
   hamburger: { background: 'none', border: 'none', color: '#e2e8f0', fontSize: 24, cursor: 'pointer', lineHeight: 1, padding: 4 },
   overlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 99 },
   sidebarLogo: { padding: '20px 16px 16px', borderBottom: '1px solid #334155' },
-  logoTitle: { fontSize: 16, fontWeight: 700, color: '#e94560', letterSpacing: 1 },
+  logoTitle: { fontSize: 16, fontWeight: 700, color: '#34d399', letterSpacing: 1 },
   logoSub: { fontSize: 11, color: '#64748b', marginTop: 2 },
   navList: { flex: 1, padding: '12px 0', overflowY: 'auto' },
   navGroup: { marginBottom: 4 },
   navGroupLabel: { fontSize: 10, color: '#475569', fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', padding: '8px 16px 4px' },
-  navItem: (active) => ({ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 16px', cursor: 'pointer', borderLeft: `3px solid ${active ? '#e94560' : 'transparent'}`, background: active ? '#0f172a' : 'transparent', color: active ? '#e2e8f0' : '#94a3b8', fontSize: 13, fontWeight: active ? 600 : 400, transition: 'all 0.15s' }),
+  navItem: (active) => ({ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 16px', cursor: 'pointer', borderLeft: `3px solid ${active ? '#10b981' : 'transparent'}`, background: active ? '#0f172a' : 'transparent', color: active ? '#e2e8f0' : '#94a3b8', fontSize: 13, fontWeight: active ? 600 : 400, transition: 'all 0.15s' }),
   main: () => ({ marginLeft: isMobile() ? 0 : 220, flex: 1, padding: isMobile() ? '72px 14px 24px' : 24, minHeight: '100vh', width: '100%', minWidth: 0 }),
   pageTitle: { fontSize: 22, fontWeight: 700, color: '#e2e8f0', marginBottom: 4 },
   pageSub: { fontSize: 13, color: '#64748b', marginBottom: 20 },
   card: { background: '#1e293b', borderRadius: 12, padding: 20, border: '1px solid #334155' },
   kpiGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16, marginBottom: 24 },
-  kpiCard: (color) => ({ background: '#1e293b', borderRadius: 12, padding: '16px 20px', border: `1px solid #334155`, borderTop: `3px solid ${color || '#e94560'}` }),
+  kpiCard: (color) => ({ background: '#1e293b', borderRadius: 12, padding: '16px 20px', border: `1px solid #334155`, borderTop: `3px solid ${color || '#10b981'}` }),
   kpiLabel: { fontSize: 11, color: '#64748b', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 },
   kpiValue: (color) => ({ fontSize: 22, fontWeight: 700, color: color || '#e2e8f0' }),
   kpiSub: { fontSize: 11, color: '#475569', marginTop: 3 },
@@ -93,7 +93,7 @@ const S = {
     padding: variant === 'sm' ? '6px 12px' : '10px 20px',
     borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 600,
     fontSize: variant === 'sm' ? 12 : 14,
-    background: variant === 'danger' ? '#dc2626' : variant === 'ghost' ? 'transparent' : '#e94560',
+    background: variant === 'danger' ? '#dc2626' : variant === 'ghost' ? 'transparent' : '#10b981',
     color: variant === 'ghost' ? '#94a3b8' : '#fff',
     transition: 'opacity 0.15s',
   }),
@@ -109,9 +109,9 @@ const S = {
   modal: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 },
   modalBox: { background: '#1e293b', borderRadius: 16, padding: 28, width: '100%', maxWidth: 640, maxHeight: '90vh', overflowY: 'auto', border: '1px solid #334155' },
   tabs: { display: 'flex', gap: 4, marginBottom: 20, borderBottom: '1px solid #334155', paddingBottom: 0 },
-  tab: (active) => ({ padding: '8px 16px', cursor: 'pointer', fontSize: 13, fontWeight: active ? 600 : 400, color: active ? '#e94560' : '#64748b', borderBottom: `2px solid ${active ? '#e94560' : 'transparent'}`, marginBottom: -1, transition: 'all 0.15s', background: 'none', border: 'none' }),
+  tab: (active) => ({ padding: '8px 16px', cursor: 'pointer', fontSize: 13, fontWeight: active ? 600 : 400, color: active ? '#34d399' : '#64748b', borderBottom: `2px solid ${active ? '#10b981' : 'transparent'}`, marginBottom: -1, transition: 'all 0.15s', background: 'none', border: 'none' }),
   filterRow: { display: 'flex', gap: 10, marginBottom: 20, alignItems: 'center', flexWrap: 'wrap' },
-  filterBtn: (active) => ({ padding: '6px 14px', borderRadius: 20, border: `1px solid ${active ? '#e94560' : '#334155'}`, background: active ? '#e94560' : 'transparent', color: active ? '#fff' : '#94a3b8', fontSize: 12, cursor: 'pointer', fontWeight: active ? 600 : 400 }),
+  filterBtn: (active) => ({ padding: '6px 14px', borderRadius: 20, border: `1px solid ${active ? '#10b981' : '#334155'}`, background: active ? '#10b981' : 'transparent', color: active ? '#fff' : '#94a3b8', fontSize: 12, cursor: 'pointer', fontWeight: active ? 600 : 400 }),
 }
 
 // ─────────────────────────────────────────────
@@ -1676,7 +1676,7 @@ function FormVendaFisica({ db, refresh, onClose }) {
             )}
             {pag.forma === 'TROCA' && (
               <div style={{ marginTop: 12, padding: 12, background: '#1a0505', borderRadius: 8, border: '1px dashed #991b1b' }}>
-                <div style={{ fontSize: 12, color: '#e94560', marginBottom: 10, fontWeight: 600 }}>📱 Aparelho de Troca — entrará no estoque automaticamente</div>
+                <div style={{ fontSize: 12, color: '#34d399', marginBottom: 10, fontWeight: 600 }}>📱 Aparelho de Troca — entrará no estoque automaticamente</div>
                 <div style={S.row('1fr 1fr')}>
                   <div><label style={S.label}>Marca *</label>
                     <select style={S.select} value={pag.trocaMarca || ''} onChange={e => setPagamento(i, 'trocaMarca', e.target.value)}>
@@ -2146,7 +2146,7 @@ function FormVendaOnline({ db, refresh, onClose }) {
             )}
             {pag.forma === 'TROCA' && (
               <div style={{ marginTop: 12, padding: 12, background: '#1a0505', borderRadius: 8, border: '1px dashed #991b1b' }}>
-                <div style={{ fontSize: 12, color: '#e94560', marginBottom: 10, fontWeight: 600 }}>📱 Aparelho de Troca — entrará no estoque automaticamente</div>
+                <div style={{ fontSize: 12, color: '#34d399', marginBottom: 10, fontWeight: 600 }}>📱 Aparelho de Troca — entrará no estoque automaticamente</div>
                 <div style={S.row('1fr 1fr')}>
                   <div><label style={S.label}>Marca *</label>
                     <select style={S.select} value={pag.trocaMarca || ''} onChange={e => setPag(i, 'trocaMarca', e.target.value)}>
